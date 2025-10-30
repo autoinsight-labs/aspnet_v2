@@ -6,5 +6,7 @@ namespace AutoInsight.Models
 
         public required string Name { get; set; }
         public Guid OwnerId { get; init; }
+
+        public ICollection<YardEmployee> Employees { get; } = new List<YardEmployee>();
     }
 }
