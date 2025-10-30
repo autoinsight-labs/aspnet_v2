@@ -14,6 +14,7 @@ namespace AutoInsight.Data
         {
             modelBuilder.HasPostgresEnum<VehicleModel>();
             modelBuilder.HasPostgresEnum<EmployeeRole>();
+            modelBuilder.HasPostgresEnum<VehicleStatus>();
 
             modelBuilder.Entity<Vehicle>(entity =>
             {
@@ -33,6 +34,26 @@ namespace AutoInsight.Data
 
                 entity.HasOne(e => e.Yard)
                       .WithMany(y => y.Employees)
+                      .HasForeignKey(e => e.YardId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<YardVehicle>(entity =>
+            {
+                entity.ToTable("yard_vehicles");
+                entity.Property(e => e.Status).HasColumnType("vehicle_status");
+                entity.Property(e => e.EnteredAt);
+                entity.Property(e => e.LeftAt);
+
+                entity.HasOne(e => e.Vehicle)
+                      .WithMany()
+                      .HasForeignKey(e => e.VehicleId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Yard)
+                      .WithMany(y => y.Vehicles)
                       .HasForeignKey(e => e.YardId)
                       .IsRequired()
                       .OnDelete(DeleteBehavior.Cascade);
