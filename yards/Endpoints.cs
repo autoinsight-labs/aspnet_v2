@@ -2,6 +2,7 @@ using AutoInsight.Yards.Create;
 using AutoInsight.Yards.List;
 using AutoInsight.Yards.Get;
 using AutoInsight.Yards.Delete;
+using AutoInsight.Yards.Update;
 
 namespace AutoInsight.Yards
 {
@@ -11,7 +12,7 @@ namespace AutoInsight.Yards
         {
             var yardGroup = group.MapGroup("/yards").WithTags("yard");
 
-            yardGroup.MapYardCreateEndpoint().MapYardListEndpoint().MapYardGetEndpoint().MapYardDeleteEndpoint();
+            yardGroup.MapYardCreateEndpoint().MapYardListEndpoint().MapYardGetEndpoint().MapYardDeleteEndpoint().MapYardUpdateEndpoint();
 
             return yardGroup;
         }
