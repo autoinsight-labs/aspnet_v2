@@ -9,5 +9,6 @@ namespace AutoInsight.Models
 
         public ICollection<YardEmployee> Employees { get; } = new List<YardEmployee>();
         public ICollection<YardVehicle> Vehicles { get; } = new List<YardVehicle>();
+        public ICollection<EmployeeInvite> Invites { get; } = new List<EmployeeInvite>();
     }
 }

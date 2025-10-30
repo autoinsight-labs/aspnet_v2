@@ -9,12 +9,16 @@ namespace AutoInsight.Data
 
         public DbSet<Yard> Yards => Set<Yard>();
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+        public DbSet<YardEmployee> YardEmployees => Set<YardEmployee>();
+        public DbSet<YardVehicle> YardVehicles => Set<YardVehicle>();
+        public DbSet<EmployeeInvite> EmployeeInvites => Set<EmployeeInvite>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasPostgresEnum<VehicleModel>();
             modelBuilder.HasPostgresEnum<EmployeeRole>();
             modelBuilder.HasPostgresEnum<VehicleStatus>();
+            modelBuilder.HasPostgresEnum<InviteStatus>();
 
             modelBuilder.Entity<Vehicle>(entity =>
             {
@@ -54,6 +58,23 @@ namespace AutoInsight.Data
 
                 entity.HasOne(e => e.Yard)
                       .WithMany(y => y.Vehicles)
+                      .HasForeignKey(e => e.YardId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<EmployeeInvite>(entity =>
+            {
+                entity.ToTable("employee_invites");
+
+                entity.Property(e => e.Role).HasColumnType("employee_role");
+                entity.Property(e => e.Status).HasColumnType("invite_status");
+                entity.Property(e => e.Email).IsRequired();
+                entity.Property(e => e.InviterId).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                entity.HasOne(e => e.Yard)
+                      .WithMany(y => y.Invites)
                       .HasForeignKey(e => e.YardId)
                       .IsRequired()
                       .OnDelete(DeleteBehavior.Cascade);
