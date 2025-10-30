@@ -1,4 +1,5 @@
 using AutoInsight.Yards.Create;
+using AutoInsight.Yards.List;
 
 namespace AutoInsight.Yards
 {
@@ -8,7 +9,7 @@ namespace AutoInsight.Yards
         {
             var yardGroup = group.MapGroup("/yards").WithTags("yard");
 
-            yardGroup.MapYardCreateEndpoint();
+            yardGroup.MapYardCreateEndpoint().MapYardListEndpoint();
             return yardGroup;
         }
     }
