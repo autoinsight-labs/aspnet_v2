@@ -7,7 +7,28 @@ namespace AutoInsight.Yards.Delete
     {
         public static RouteGroupBuilder MapYardDeleteEndpoint(this RouteGroupBuilder group)
         {
-            group.MapDelete("/{yardId}", HandleAsync);
+            group.MapDelete("/{yardId}", HandleAsync)
+                        .WithSummary("Delete a Yard by its ID")
+                                                .WithDescription(
+                                                        "Deletes a Yard from the system by its unique identifier.\n\n" +
+                                                        "**Path Parameter:**\n" +
+                                                        "- `yardId` (UUID): The unique identifier of the Yard.\n\n" +
+                                                        "**Example Request:**\n" +
+                                                        "```bash\n" +
+                                                        "DELETE /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\n" +
+                                                        "```\n\n" +
+                                                        "**Possible Responses:**\n" +
+                                                        "- `200 OK`: Yard successfully deleted.\n" +
+                                                        "- `400 Bad Request`: Invalid Yard ID format.\n" +
+                                                        "- `404 Not Found`: Yard not found.\n\n" +
+                                                        "**Example Response (200):**\n" +
+                                                        "```json\n" +
+                                                        "{ \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\" }\n" +
+                                                        "```"
+                                                )
+                                                .Produces<Response>(StatusCodes.Status200OK)
+                                                .Produces(StatusCodes.Status400BadRequest)
+                                                .Produces(StatusCodes.Status404NotFound);
             return group;
         }
 
