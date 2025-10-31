@@ -1,6 +1,7 @@
 using AutoInsight.Vehicles.Create;
 using AutoInsight.Vehicles.List;
 using AutoInsight.Vehicles.Get;
+using AutoInsight.Vehicles.Delete;
 
 namespace AutoInsight.Vehicles
 {
@@ -13,7 +14,8 @@ namespace AutoInsight.Vehicles
             vehicleGroup
                  .MapVehicleCreateEndpoint()
                  .MapVehicleListEndpoint()
-                 .MapVehicleGetEndpoint();
+                 .MapVehicleGetEndpoint()
+                 .MapVehicleDeleteEndpoint();
 
             return group;
         }
