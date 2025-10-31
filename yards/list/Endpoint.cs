@@ -7,7 +7,42 @@ namespace AutoInsight.Yards.List
     {
         public static RouteGroupBuilder MapYardListEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/", HandleAsync);
+            group.MapGet("/", HandleAsync)
+            .WithSummary("List Yards with pagination support")
+                .WithDescription(
+                    "Retrieves a paginated list of Yards ordered by their ID.\n\n" +
+                    "**Query Parameters:**\n" +
+                    "- `cursor` (UUID, optional): Used for pagination to fetch the next set of results.\n" +
+                    "- `limit` (integer, optional, default=10, max=100): Number of items to return.\n\n" +
+                    "**Example Request:**\n" +
+                    "```bash\n" +
+                    "GET /v2/yards?limit=5\n" +
+                    "```\n\n" +
+                    "**Pagination Example:**\n" +
+                    "```bash\n" +
+                    "GET /v2/yards?cursor=6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83&limit=5\n" +
+                    "```\n\n" +
+                    "**Possible Responses:**\n" +
+                    "- `200 OK`: Returns a paginated list of Yards.\n" +
+                    "- `400 Bad Request`: Invalid cursor or limit value.\n\n" +
+                    "**Example Response (200):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"items\": [\n" +
+                    "    { \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\", \"name\": \"Main Storage Yard\", \"ownerId\": \"d5a90c87-fb15-4df7-86f3-982b6b8e53d1\" },\n" +
+                    "    { \"id\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\", \"name\": \"Secondary Lot\", \"ownerId\": \"21e8c4e4-d38b-47cf-8022-f4bbf2d5f212\" }\n" +
+                    "  ],\n" +
+                    "  \"pageInfo\": {\n" +
+                    "    \"nextCursor\": \"9f1f3a93-bf6d-4028-91cb-238aaf3b2368\",\n" +
+                    "    \"hasNext\": true\n" +
+                    "  },\n" +
+                    "  \"count\": 2\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest);
+
             return group;
         }
 
