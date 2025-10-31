@@ -1,4 +1,5 @@
 using AutoInsight.Vehicles.Create;
+using AutoInsight.Vehicles.List;
 
 namespace AutoInsight.Vehicles
 {
@@ -9,7 +10,8 @@ namespace AutoInsight.Vehicles
             var vehicleGroup = group.MapGroup("/vehicles").WithTags("vehicle");
 
             vehicleGroup
-                 .MapVehicleCreateEndpoint();
+                 .MapVehicleCreateEndpoint()
+                 .MapVehicleListEndpoint();
 
             return group;
         }
