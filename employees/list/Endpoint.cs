@@ -7,7 +7,45 @@ namespace AutoInsight.YardEmployees.List
     {
         public static RouteGroupBuilder MapYardEmployeeListEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/", HandleAsync);
+            group.MapGet("/", HandleAsync)
+                .WithSummary("List employees assigned to a yard")
+                .WithDescription(
+                    "Retrieves a paginated list of employees for the specified yard, ordered by their ID.\n\n" +
+                    "**Path Parameters:**\n" +
+                    "- `yardId` (UUID, required): Identifier of the yard whose employees will be listed.\n\n" +
+                    "**Query Parameters:**\n" +
+                    "- `cursor` (UUID, optional): Used for cursor-based pagination to fetch the next page.\n" +
+                    "- `limit` (integer, optional, default=10, max=100): Maximum number of employees to return.\n\n" +
+                    "**Example Request:**\n" +
+                    "```bash\n" +
+                    "GET /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83/employees?limit=5\n" +
+                    "```\n\n" +
+                    "**Pagination Example:**\n" +
+                    "```bash\n" +
+                    "GET /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83/employees?cursor=7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b&limit=5\n" +
+                    "```\n\n" +
+                    "**Possible Responses:**\n" +
+                    "- `200 OK`: Returns a paginated list of employees.\n" +
+                    "- `400 Bad Request`: Invalid yardId, cursor or limit.\n" +
+                    "- `404 Not Found`: Yard not found.\n\n" +
+                    "**Example Response (200):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"items\": [\n" +
+                    "    { \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\", \"name\": \"Maria Souza\", \"imageUrl\": \"https://cdn.example.com/avatar-maria.png\", \"role\": \"Admin\", \"userId\": \"d5a90c87-fb15-4df7-86f3-982b6b8e53d1\" },\n" +
+                    "    { \"id\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\", \"name\": \"João Lima\", \"imageUrl\": null, \"role\": \"Member\", \"userId\": \"21e8c4e4-d38b-47cf-8022-f4bbf2d5f212\" }\n" +
+                    "  ],\n" +
+                    "  \"pageInfo\": {\n" +
+                    "    \"nextCursor\": \"9f1f3a93-bf6d-4028-91cb-238aaf3b2368\",\n" +
+                    "    \"hasNext\": true\n" +
+                    "  },\n" +
+                    "  \"count\": 2\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             return group;
         }
@@ -32,7 +70,7 @@ namespace AutoInsight.YardEmployees.List
                 if (!Guid.TryParse(cursor, out var parsed))
                     return Results.BadRequest(new { error = "Cursor must be a valid UUID." });
 
-                bool exists = await db.Vehicles.AnyAsync(y => y.Id == parsed);
+                bool exists = await db.YardEmployees.AnyAsync(y => y.Id == parsed);
                 if (!exists)
                     return Results.BadRequest(new { error = "Cursor not found." });
 

@@ -7,7 +7,31 @@ namespace AutoInsight.YardEmployees.Delete
     {
         public static RouteGroupBuilder MapYardEmployeeDeleteEndpoint(this RouteGroupBuilder group)
         {
-            group.MapDelete("/{employeeId}", HandleAsync);
+            group.MapDelete("/{employeeId}", HandleAsync)
+                .WithSummary("Remove an employee from a yard")
+                .WithDescription(
+                    "Deletes an employee that belongs to the specified yard.\n\n" +
+                    "**Path Parameters:**\n" +
+                    "- `yardId` (UUID, required): Identifier of the yard.\n" +
+                    "- `employeeId` (UUID, required): Identifier of the employee to delete.\n\n" +
+                    "**Example Request:**\n" +
+                    "```bash\n" +
+                    "DELETE /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83/employees/7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\n" +
+                    "```\n\n" +
+                    "**Possible Responses:**\n" +
+                    "- `200 OK`: Employee successfully removed.\n" +
+                    "- `400 Bad Request`: Invalid yardId or employeeId.\n" +
+                    "- `404 Not Found`: Yard or employee not found.\n\n" +
+                    "**Example Response (200):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"id\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\"\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             return group;
         }

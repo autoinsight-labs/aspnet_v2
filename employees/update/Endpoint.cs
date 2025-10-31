@@ -9,7 +9,41 @@ namespace AutoInsight.YardEmployees.Update
     {
         public static RouteGroupBuilder MapYardEmployeeUpdateEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPatch("/{employeeId}", HandleAsync);
+            group.MapPatch("/{employeeId}", HandleAsync)
+                .WithSummary("Update an employee's details inside a yard")
+                .WithDescription(
+                    "Performs a partial update on the information of an employee assigned to the specified yard.\n\n" +
+                    "**Path Parameters:**\n" +
+                    "- `yardId` (UUID, required): Identifier of the yard.\n" +
+                    "- `employeeId` (UUID, required): Identifier of the employee to update.\n\n" +
+                    "**Request Body (partial fields optional):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"name\": \"Maria Souza\",\n" +
+                    "  \"imageUrl\": \"https://cdn.example.com/avatar-maria.png\",\n" +
+                    "  \"role\": \"Admin\"\n" +
+                    "}\n" +
+                    "```\n\n" +
+                    "**Possible Responses:**\n" +
+                    "- `200 OK`: Employee successfully updated.\n" +
+                    "- `400 Bad Request`: Invalid yardId, employeeId or payload.\n" +
+                    "- `404 Not Found`: Yard or employee not found.\n" +
+                    "- `422 Unprocessable Entity`: Validation errors for provided fields.\n\n" +
+                    "**Example Response (200):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"id\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\",\n" +
+                    "  \"name\": \"Maria Souza\",\n" +
+                    "  \"imageUrl\": \"https://cdn.example.com/avatar-maria.png\",\n" +
+                    "  \"role\": \"Admin\",\n" +
+                    "  \"userId\": \"21e8c4e4-d38b-47cf-8022-f4bbf2d5f212\"\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .ProducesValidationProblem()
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
             return group;
         }
 
