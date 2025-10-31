@@ -14,7 +14,7 @@ namespace AutoInsight.Yards
 
             yardGroup.MapYardCreateEndpoint().MapYardListEndpoint().MapYardGetEndpoint().MapYardDeleteEndpoint().MapYardUpdateEndpoint();
 
-            return yardGroup;
+            return group;
         }
     }
 }
