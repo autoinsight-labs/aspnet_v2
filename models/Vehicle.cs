@@ -13,6 +13,6 @@ namespace AutoInsight.Models
         public Guid Id { get; init; } = Guid.NewGuid();
         public required string Plate { get; set; }
         public required VehicleModel Model { get; set; }
-        public Guid OwnerId { get; init; }
+        public Guid OwnerId { get; set; }
     }
 }
