@@ -1,5 +1,6 @@
 using AutoInsight.YardEmployees.List;
 using AutoInsight.YardEmployees.Get;
+using AutoInsight.YardEmployees.Delete;
 
 namespace AutoInsight.YardEmployees
 {
@@ -11,7 +12,8 @@ namespace AutoInsight.YardEmployees
 
             employeeGroup
                  .MapYardEmployeeListEndpoint()
-                 .MapYardEmployeeGetEndpoint();
+                 .MapYardEmployeeGetEndpoint()
+                 .MapYardEmployeeDeleteEndpoint();
 
             return group;
         }
