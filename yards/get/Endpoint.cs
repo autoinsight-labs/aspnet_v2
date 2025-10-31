@@ -54,7 +54,19 @@ namespace AutoInsight.Yards.Get
             if (yard is null)
                 return Results.NotFound(new { error = "Yard not found" });
 
-            var response = new Response(yard.Id, yard.Name, yard.OwnerId, yard.Employees, yard.Invites);
+            var response = new Response(
+                                yard.Id,
+                                yard.Name,
+                                yard.OwnerId,
+                                yard.Employees.Select(e =>
+                                    new EmployeeResponse(
+                                                    e.Id,
+                                                    e.Name,
+                                                    e.ImageUrl,
+                                                    e.Role.ToString(),
+                                                    e.UserId)
+                                    ).ToList(),
+                                yard.Invites);
             return Results.Ok(response);
         }
     }

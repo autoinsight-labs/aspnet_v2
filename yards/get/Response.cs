@@ -5,6 +5,8 @@ public record Response(
     Guid Id,
     string name,
     Guid OwnerId,
-    ICollection<YardEmployee> Employees,
+    ICollection<EmployeeResponse> Employees,
     ICollection<EmployeeInvite> Invites
 );
+
+public record EmployeeResponse(Guid Id, string Name, string? ImageUrl, string Role, Guid UserId);
