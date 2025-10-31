@@ -8,7 +8,37 @@ namespace AutoInsight.Yards.Update
     {
         public static RouteGroupBuilder MapYardUpdateEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPatch("/{yardId}", HandleAsync);
+            group.MapPatch("/{yardId}", HandleAsync)
+                .WithSummary("Update a Yard partially")
+                .WithDescription(
+                    "Updates one or more fields of an existing Yard identified by its ID.\n\n" +
+                    "This endpoint supports partial updates — only the provided fields will be modified.\n\n" +
+                    "**Path Parameter:**\n" +
+                    "- `yardId` (UUID): The unique identifier of the Yard to update.\n\n" +
+                    "**Request Body Example:**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"name\": \"Updated Yard Name\",\n" +
+                    "  \"ownerId\": \"9f4f93c6-56e1-4f8f-a5e1-8b6b654a09dc\"\n" +
+                    "}\n" +
+                    "```\n\n" +
+                    "**Possible Responses:**\n" +
+                    "- `200 OK`: Returns the updated Yard.\n" +
+                    "- `400 Bad Request`: Invalid Yard ID or payload.\n" +
+                    "- `404 Not Found`: Yard does not exist.\n" +
+                    "**Example Successful Response (200):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"id\": \"9a3b2b1d-7e54-4b5a-93f3-5a4bfa351b1d\",\n" +
+                    "  \"name\": \"Updated Yard Name\",\n" +
+                    "  \"ownerId\": \"9f4f93c6-56e1-4f8f-a5e1-8b6b654a09dc\"\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound)
+                .ProducesValidationProblem();
             return group;
         }
 
