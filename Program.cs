@@ -1,5 +1,6 @@
 using AutoInsight.Yards;
 using AutoInsight.Vehicles;
+using AutoInsight.YardEmployees;
 using AutoInsight.Data;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -11,7 +12,11 @@ builder.Services.AddOpenApi("v2");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-                o => o.MapEnum<VehicleModel>("vehicle_model")
+                o =>
+                {
+                    o.MapEnum<VehicleModel>("vehicle_model");
+                    o.MapEnum<EmployeeRole>("employee_role");
+                }
                 )
         .UseSnakeCaseNamingConvention());
 
@@ -28,6 +33,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapGroup("/v2")
     .MapYardEnpoints()
-    .MapVehicleEnpoints();
+    .MapVehicleEnpoints()
+    .MapYardEmployeeEnpoints();
 
 app.Run();
