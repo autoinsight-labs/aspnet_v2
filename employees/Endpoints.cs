@@ -1,4 +1,5 @@
 using AutoInsight.YardEmployees.List;
+using AutoInsight.YardEmployees.Get;
 
 namespace AutoInsight.YardEmployees
 {
@@ -9,7 +10,8 @@ namespace AutoInsight.YardEmployees
             var employeeGroup = group.MapGroup("/yards/{yardId}/employees").WithTags("employee");
 
             employeeGroup
-                 .MapYardEmployeeListEndpoint();
+                 .MapYardEmployeeListEndpoint()
+                 .MapYardEmployeeGetEndpoint();
 
             return group;
         }
