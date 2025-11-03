@@ -1,5 +1,6 @@
 using AutoInsight.EmployeeInvites.Create;
 using AutoInsight.EmployeeInvites.Get;
+using AutoInsight.EmployeeInvites.List;
 
 namespace AutoInsight.EmployeeInvites
 {
@@ -10,7 +11,9 @@ namespace AutoInsight.EmployeeInvites
             var yardEmployeeInviteGroup = group.MapGroup("/yards/{yardId}/invites").WithTags("invite");
             var employeeInviteGroup = group.MapGroup("/invites").WithTags("invite");
 
-            yardEmployeeInviteGroup.MapEmployeeInviteCreateEndpoint();
+            yardEmployeeInviteGroup
+                            .MapEmployeeInviteCreateEndpoint()
+                            .MapEmployeeInviteListEndpoint();
             employeeInviteGroup.MapEmployeeInviteGetEndpoint();
 
             return group;
