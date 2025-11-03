@@ -42,7 +42,10 @@ namespace AutoInsight.EmployeeInvites.Accept
                         .Include(i => i.Yard)
                         .FirstOrDefaultAsync(y => y.Id == parsedInviteId);
             if (invite is null)
-                return Results.NotFound(new { error = "Yard not found" });
+                return Results.NotFound(new { error = "Invite not found" });
+
+            if (invite.Status != InviteStatus.Pending)
+                return Results.BadRequest(new { error = "Invite not available" });
 
             var validation = await new Validator().ValidateAsync(request);
             if (!validation.IsValid)

@@ -3,6 +3,7 @@ using AutoInsight.EmployeeInvites.Get;
 using AutoInsight.EmployeeInvites.List;
 using AutoInsight.EmployeeInvites.Delete;
 using AutoInsight.EmployeeInvites.Accept;
+using AutoInsight.EmployeeInvites.Reject;
 
 namespace AutoInsight.EmployeeInvites
 {
@@ -16,10 +17,12 @@ namespace AutoInsight.EmployeeInvites
             yardEmployeeInviteGroup
                             .MapEmployeeInviteCreateEndpoint()
                             .MapEmployeeInviteListEndpoint();
+
             employeeInviteGroup
                             .MapEmployeeInviteGetEndpoint()
                             .MapEmployeeInviteDeleteEndpoint()
-                            .MapEmployeeInviteAcceptEndpoint();
+                            .MapEmployeeInviteAcceptEndpoint()
+                            .MapEmployeeInviteRejectEndpoint();
 
             return group;
         }
