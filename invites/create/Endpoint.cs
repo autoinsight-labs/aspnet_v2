@@ -67,7 +67,7 @@ namespace AutoInsight.EmployeeInvites.Create
                         invite.InviterId,
                         new YardResponse(yard.Id, yard.Name)
                     );
-            return Results.Created($"/v2/yards/{yardId}/invites/{invite.Id}", response);
+            return Results.Created($"/v2/invites/{invite.Id}", response);
         }
     }
 }
