@@ -39,7 +39,7 @@ namespace AutoInsight.EmployeeInvites.List
                 cursorGuid = parsed;
             }
 
-            var query = db.EmployeeInvites.AsQueryable();
+            var query = db.EmployeeInvites.AsQueryable().Where(i => i.YardId == parsedYardId);
 
             if (cursorGuid.HasValue)
             {

@@ -77,7 +77,7 @@ namespace AutoInsight.YardEmployees.List
                 cursorGuid = parsed;
             }
 
-            var query = db.YardEmployees.AsQueryable();
+            var query = db.YardEmployees.AsQueryable().Where(e => e.YardId == parsedYardId);
 
             if (cursorGuid.HasValue)
             {
