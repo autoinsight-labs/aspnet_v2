@@ -12,9 +12,9 @@ namespace AutoInsight.Models
         public Guid Id { get; init; } = Guid.NewGuid();
         public required string Email { get; set; }
         public required EmployeeRole Role { get; set; }
-        public InviteStatus Status { get; private set; } = InviteStatus.Pending;
+        public InviteStatus Status { get; set; } = InviteStatus.Pending;
         public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
-        public DateTime? AcceptedAt { get; private set; }
+        public DateTime? AcceptedAt { get; set; }
 
         public required Guid InviterId { get; set; }
 
