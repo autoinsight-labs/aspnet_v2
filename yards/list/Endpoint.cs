@@ -28,7 +28,7 @@ namespace AutoInsight.Yards.List
                     "**Example Response (200):**\n" +
                     "```json\n" +
                     "{\n" +
-                    "  \"items\": [\n" +
+                    "  \"data\": [\n" +
                     "    { \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\", \"name\": \"Main Storage Yard\", \"ownerId\": \"d5a90c87-fb15-4df7-86f3-982b6b8e53d1\" },\n" +
                     "    { \"id\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\", \"name\": \"Secondary Lot\", \"ownerId\": \"21e8c4e4-d38b-47cf-8022-f4bbf2d5f212\" }\n" +
                     "  ],\n" +

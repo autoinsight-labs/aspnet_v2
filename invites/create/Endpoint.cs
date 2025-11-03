@@ -9,7 +9,40 @@ namespace AutoInsight.EmployeeInvites.Create
     {
         public static RouteGroupBuilder MapEmployeeInviteCreateEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/", HandleAsync);
+            group.MapPost("/", HandleAsync)
+                .WithSummary("Create a new Employee Invite")
+                .WithDescription(
+                    "Creates a new Employee Invite for a specific Yard, based on the provided email, role, and inviter ID. " +
+                    "If the Yard does not exist, returns 404 Not Found. If the request is invalid, returns validation errors.\n\n" +
+                    "### Example Request\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"email\": \"john.doe@example.com\",\n" +
+                    "  \"role\": \"Member\",\n" +
+                    "  \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
+                    "}\n" +
+                    "```\n\n" +
+                    "### Example Response\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"id\": \"f27f2f3a-5d9b-4e1a-9f23-bc17f1e7e200\",\n" +
+                    "  \"email\": \"john.doe@example.com\",\n" +
+                    "  \"role\": \"Member\",\n" +
+                    "  \"status\": \"Pending\",\n" +
+                    "  \"createdAt\": \"2025-11-03T12:45:30Z\",\n" +
+                    "  \"acceptedAt\": null,\n" +
+                    "  \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\",\n" +
+                    "  \"yard\": {\n" +
+                    "    \"id\": \"9a4a2b66-2b29-4de7-82b2-8f3a3af88f66\",\n" +
+                    "    \"name\": \"Central Yard\"\n" +
+                    "  }\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status201Created)
+                .ProducesValidationProblem()
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             return group;
         }

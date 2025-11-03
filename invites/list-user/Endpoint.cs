@@ -7,7 +7,45 @@ namespace AutoInsight.EmployeeInvites.ListUser
     {
         public static RouteGroupBuilder MapEmployeeInviteListUserEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/user/{email}", HandleAsync);
+            group.MapGet("/user/{email}", HandleAsync)
+                .WithName("ListEmployeeInvitesByUser")
+                .WithSummary("List Employee Invites by user email")
+                .WithDescription(
+                    "Retrieves a paginated list of Employee Invites associated with a specific user's email. " +
+                    "Supports cursor-based pagination using the `cursor` and `limit` query parameters. " +
+                    "If parameters are invalid, returns 400 Bad Request.\n\n" +
+                    "### Example Request\n" +
+                    "```\n" +
+                    "GET /v2/invites/user/john.doe@example.com?limit=2\n" +
+                    "```\n\n" +
+                    "### Example Response\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"data\": [\n" +
+                    "    {\n" +
+                    "      \"id\": \"c6b61b2e-2af9-4b5a-b58a-3e09d0a933b1\",\n" +
+                    "      \"email\": \"john.doe@example.com\",\n" +
+                    "      \"role\": \"Admin\",\n" +
+                    "      \"status\": \"Accepted\",\n" +
+                    "      \"createdAt\": \"2025-11-03T12:45:30Z\",\n" +
+                    "      \"acceptedAt\": \"2025-11-03T13:00:00Z\",\n" +
+                    "      \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\",\n" +
+                    "      \"yard\": {\n" +
+                    "        \"id\": \"9a4a2b66-2b29-4de7-82b2-8f3a3af88f66\",\n" +
+                    "        \"name\": \"Central Yard\"\n" +
+                    "      }\n" +
+                    "    }\n" +
+                    "  ],\n" +
+                    "  \"pageInfo\": {\n" +
+                    "    \"nextCursor\": \"c6b61b2e-2af9-4b5a-b58a-3e09d0a933b1\",\n" +
+                    "    \"hasNext\": true\n" +
+                    "  },\n" +
+                    "  \"count\": 1\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest);
 
             return group;
         }

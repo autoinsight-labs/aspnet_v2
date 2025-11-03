@@ -9,7 +9,35 @@ namespace AutoInsight.EmployeeInvites.Accept
     {
         public static RouteGroupBuilder MapEmployeeInviteAcceptEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPost("/{inviteId}/accept", HandleAsync);
+            group.MapPost("/{inviteId}/accept", HandleAsync)
+                .WithSummary("Accept an Employee Invite")
+                .WithDescription(
+                    "Accepts a pending Employee Invite identified by its UUID, creating a new `YardEmployee` linked to the corresponding Yard.\n\n" +
+                    "**Route Parameter:**\n" +
+                    "- `inviteId` (UUID, required): The unique identifier of the invite to accept.\n\n" +
+                    "**Request Body:**\n" +
+                    "- `name` (string, required): The name of the employee accepting the invite.\n" +
+                    "- `imageUrl` (string, optional): URL to the employee’s profile picture.\n" +
+                    "- `userId` (UUID, required): The unique identifier of the user accepting the invite.\n\n" +
+                    "**Example Request:**\n" +
+                    "```bash\n" +
+                    "POST /v2/employee-invites/91af237a-59db-4c13-bf37-0cf6f3ec5a94/accept\n" +
+                    "Content-Type: application/json\n" +
+                    "\n" +
+                    "{\n" +
+                    "  \"name\": \"Arthur Mariano\",\n" +
+                    "  \"imageUrl\": \"https://example.com/avatar.png\",\n" +
+                    "  \"userId\": \"d5a90c87-fb15-4df7-86f3-982b6b8e53d1\"\n" +
+                    "}\n" +
+                    "```\n\n" +
+                    "**Possible Responses:**\n" +
+                    "- `200 OK`: Invite successfully accepted and employee created.\n" +
+                    "- `400 Bad Request`: Invalid UUID or invite already accepted/declined.\n" +
+                    "- `404 Not Found`: Invite not found.\n"
+                )
+                .Produces(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             return group;
         }

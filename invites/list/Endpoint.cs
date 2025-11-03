@@ -7,7 +7,54 @@ namespace AutoInsight.EmployeeInvites.List
     {
         public static RouteGroupBuilder MapEmployeeInviteListEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/", HandleAsync);
+            group.MapGet("/", HandleAsync)
+                .WithSummary("List Employee Invites for a Yard")
+                .WithDescription(
+                    "Retrieves a paginated list of Employee Invites associated with a specific Yard. " +
+                    "Supports cursor-based pagination using the `cursor` and `limit` query parameters. " +
+                    "If the Yard does not exist or parameters are invalid, returns appropriate error responses.\n\n" +
+                    "### Query Parameters\n" +
+                    "- `yardId` (required): The UUID of the Yard to fetch invites from.\n" +
+                    "- `cursor` (optional): The UUID cursor indicating the starting point for the next page.\n" +
+                    "- `limit` (optional): The number of invites to return (default 10, max 100).\n\n" +
+                    "### Example Request\n" +
+                    "```\n" +
+                    "GET /v2/invites?yardId=9a4a2b66-2b29-4de7-82b2-8f3a3af88f66&limit=2\n" +
+                    "```\n\n" +
+                    "### Example Response\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"data\": [\n" +
+                    "    {\n" +
+                    "      \"id\": \"c6b61b2e-2af9-4b5a-b58a-3e09d0a933b1\",\n" +
+                    "      \"email\": \"alice@example.com\",\n" +
+                    "      \"role\": \"Admin\",\n" +
+                    "      \"status\": \"Accepted\",\n" +
+                    "      \"createdAt\": \"2025-11-03T12:45:30Z\",\n" +
+                    "      \"acceptedAt\": \"2025-11-03T13:00:00Z\",\n" +
+                    "      \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      \"id\": \"d2fa5c39-4c19-4b0a-ae44-dcd4b74a4b2a\",\n" +
+                    "      \"email\": \"bob@example.com\",\n" +
+                    "      \"role\": \"Member\",\n" +
+                    "      \"status\": \"Pending\",\n" +
+                    "      \"createdAt\": \"2025-11-03T13:10:00Z\",\n" +
+                    "      \"acceptedAt\": null,\n" +
+                    "      \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
+                    "    }\n" +
+                    "  ],\n" +
+                    "  \"pageInfo\": {\n" +
+                    "    \"nextCursor\": \"d2fa5c39-4c19-4b0a-ae44-dcd4b74a4b2a\",\n" +
+                    "    \"hasNext\": true\n" +
+                    "  },\n" +
+                    "  \"count\": 2\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             return group;
         }
