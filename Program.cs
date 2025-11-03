@@ -1,5 +1,6 @@
 using AutoInsight.Yards;
 using AutoInsight.Vehicles;
+using AutoInsight.EmployeeInvites;
 using AutoInsight.YardEmployees;
 using AutoInsight.Data;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                 {
                     o.MapEnum<VehicleModel>("vehicle_model");
                     o.MapEnum<EmployeeRole>("employee_role");
+                    o.MapEnum<InviteStatus>("invite_status");
                 }
                 )
         .UseSnakeCaseNamingConvention());
@@ -34,6 +36,7 @@ if (app.Environment.IsDevelopment())
 app.MapGroup("/v2")
     .MapYardEnpoints()
     .MapVehicleEnpoints()
-    .MapYardEmployeeEnpoints();
+    .MapYardEmployeeEnpoints()
+    .MapEmployeeInviteEnpoints();
 
 app.Run();

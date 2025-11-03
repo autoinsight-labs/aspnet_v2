@@ -55,18 +55,27 @@ namespace AutoInsight.Yards.Get
                 return Results.NotFound(new { error = "Yard not found" });
 
             var response = new Response(
-                                yard.Id,
-                                yard.Name,
-                                yard.OwnerId,
-                                yard.Employees.Select(e =>
-                                    new EmployeeResponse(
-                                                    e.Id,
-                                                    e.Name,
-                                                    e.ImageUrl,
-                                                    e.Role.ToString(),
-                                                    e.UserId)
-                                    ).ToList(),
-                                yard.Invites);
+                        yard.Id,
+                        yard.Name,
+                        yard.OwnerId,
+                        yard.Employees.Select(e =>
+                                new EmployeeResponse(
+                                    e.Id,
+                                    e.Name,
+                                    e.ImageUrl,
+                                    e.Role.ToString(),
+                                    e.UserId)
+                                ).ToList(),
+                        yard.Invites.Select(i =>
+                                new InviteResponse(
+                                    i.Id,
+                                    i.Email,
+                                    i.Role.ToString(),
+                                    i.Status.ToString(),
+                                    i.CreatedAt,
+                                    i.AcceptedAt,
+                                    i.InviterId)
+                                ).ToList());
             return Results.Ok(response);
         }
     }
