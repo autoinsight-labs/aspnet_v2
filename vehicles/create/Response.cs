@@ -1,3 +1,12 @@
 namespace AutoInsight.Vehicles.Create;
 
-public record Response(Guid Id, string Plate, string Model, Guid OwnerId);
+public record Response(
+    Guid Id,
+    string Plate,
+    string Model,
+    string Status,
+    DateTime EnteredAt,
+    DateTime? LeftAt,
+    Guid YardId,
+    Guid? AssigneeId
+);

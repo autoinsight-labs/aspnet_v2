@@ -23,7 +23,6 @@ namespace AutoInsight.Models
 
         public required string Plate { get; set; }
         public required VehicleModel Model { get; set; }
-        public Guid OwnerId { get; set; }
 
         public required VehicleStatus Status { get; set; }
         public DateTime EnteredAt { get; set; } = DateTime.UtcNow;

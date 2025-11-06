@@ -24,7 +24,6 @@ namespace AutoInsight.Data
                 entity.ToTable("vehicles");
                 entity.Property(v => v.Model).HasColumnType("vehicle_model");
                 entity.Property(v => v.Plate).IsRequired();
-                entity.Property(v => v.OwnerId).IsRequired();
 
                 entity.Property(e => e.Status).HasColumnType("vehicle_status");
                 entity.Property(e => e.EnteredAt);

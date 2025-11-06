@@ -36,7 +36,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapGroup("/v2")
     .MapYardEnpoints()
-    // .MapVehicleEnpoints()
+    .MapVehicleEnpoints()
     .MapYardEmployeeEnpoints()
     .MapEmployeeInviteEnpoints();
 
