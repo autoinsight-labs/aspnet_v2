@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                     o.MapEnum<VehicleModel>("vehicle_model");
                     o.MapEnum<EmployeeRole>("employee_role");
                     o.MapEnum<InviteStatus>("invite_status");
+                    o.MapEnum<VehicleStatus>("vehicle_status");
                 }
                 )
         .UseSnakeCaseNamingConvention());
@@ -35,7 +36,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapGroup("/v2")
     .MapYardEnpoints()
-    .MapVehicleEnpoints()
+    // .MapVehicleEnpoints()
     .MapYardEmployeeEnpoints()
     .MapEmployeeInviteEnpoints();
 

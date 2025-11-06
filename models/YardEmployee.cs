@@ -16,5 +16,7 @@ namespace AutoInsight.Models
 
         public required Guid YardId { get; set; }
         public required Yard Yard { get; set; }
+
+        public ICollection<Vehicle> Vehicles { get; } = new List<Vehicle>();
     }
 }

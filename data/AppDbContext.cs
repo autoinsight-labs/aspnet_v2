@@ -10,7 +10,6 @@ namespace AutoInsight.Data
         public DbSet<Yard> Yards => Set<Yard>();
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
         public DbSet<YardEmployee> YardEmployees => Set<YardEmployee>();
-        public DbSet<YardVehicle> YardVehicles => Set<YardVehicle>();
         public DbSet<EmployeeInvite> EmployeeInvites => Set<EmployeeInvite>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -26,6 +25,21 @@ namespace AutoInsight.Data
                 entity.Property(v => v.Model).HasColumnType("vehicle_model");
                 entity.Property(v => v.Plate).IsRequired();
                 entity.Property(v => v.OwnerId).IsRequired();
+
+                entity.Property(e => e.Status).HasColumnType("vehicle_status");
+                entity.Property(e => e.EnteredAt);
+                entity.Property(e => e.LeftAt);
+
+                entity.HasOne(e => e.Yard)
+                      .WithMany(y => y.Vehicles)
+                      .HasForeignKey(e => e.YardId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Assignee)
+                      .WithMany(y => y.Vehicles)
+                      .HasForeignKey(e => e.AssigneeId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<YardEmployee>(entity =>
@@ -38,26 +52,6 @@ namespace AutoInsight.Data
 
                 entity.HasOne(e => e.Yard)
                       .WithMany(y => y.Employees)
-                      .HasForeignKey(e => e.YardId)
-                      .IsRequired()
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
-
-            modelBuilder.Entity<YardVehicle>(entity =>
-            {
-                entity.ToTable("yard_vehicles");
-                entity.Property(e => e.Status).HasColumnType("vehicle_status");
-                entity.Property(e => e.EnteredAt);
-                entity.Property(e => e.LeftAt);
-
-                entity.HasOne(e => e.Vehicle)
-                      .WithMany()
-                      .HasForeignKey(e => e.VehicleId)
-                      .IsRequired()
-                      .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(e => e.Yard)
-                      .WithMany(y => y.Vehicles)
                       .HasForeignKey(e => e.YardId)
                       .IsRequired()
                       .OnDelete(DeleteBehavior.Cascade);

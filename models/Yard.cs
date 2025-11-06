@@ -8,7 +8,7 @@ namespace AutoInsight.Models
         public Guid OwnerId { get; set; }
 
         public ICollection<YardEmployee> Employees { get; } = new List<YardEmployee>();
-        public ICollection<YardVehicle> Vehicles { get; } = new List<YardVehicle>();
+        public ICollection<Vehicle> Vehicles { get; } = new List<Vehicle>();
         public ICollection<EmployeeInvite> Invites { get; } = new List<EmployeeInvite>();
     }
 }
