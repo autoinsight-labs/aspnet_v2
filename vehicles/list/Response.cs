@@ -7,4 +7,12 @@ public record Response(
     int Count
 ) : PagedResponse<ResponseItem>(Data, PageInfo, Count);
 
-public record ResponseItem(Guid Id, string Plate, string Model, Guid OwnerId);
+public record ResponseItem(
+    Guid Id,
+    string Plate,
+    string Model,
+    string Status,
+    DateTime EnteredAt,
+    DateTime? LeftAt,
+    Guid? AssigneeId
+);

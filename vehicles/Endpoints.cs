@@ -1,5 +1,5 @@
 using AutoInsight.Vehicles.Create;
-// using AutoInsight.Vehicles.List;
+using AutoInsight.Vehicles.List;
 // using AutoInsight.Vehicles.Get;
 // using AutoInsight.Vehicles.Delete;
 // using AutoInsight.Vehicles.Update;
@@ -13,7 +13,8 @@ namespace AutoInsight.Vehicles
             var vehicleGroup = group.MapGroup("/yards/{yardId}/vehicles").WithTags("vehicle");
 
             vehicleGroup
-                 .MapVehicleCreateEndpoint();
+                 .MapVehicleCreateEndpoint()
+                 .MapVehicleListEndpoint();
 
             return group;
         }
