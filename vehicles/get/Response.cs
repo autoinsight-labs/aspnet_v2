@@ -4,5 +4,10 @@ public record Response(
     Guid Id,
     string Plate,
     string Model,
-    Guid OwnerId
+    string Status,
+    DateTime EnteredAt,
+    DateTime? LeftAt,
+    AssigneeResponse? Assignee
 );
+
+public record AssigneeResponse(Guid Id, string Name, string? ImageUrl, string Role, Guid UserId);
