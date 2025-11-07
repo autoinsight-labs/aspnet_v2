@@ -9,28 +9,33 @@ namespace AutoInsight.Yards.Create
         public static RouteGroupBuilder MapYardCreateEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/", HandleAsync)
-                            .WithName("CreateYard")
-                            .WithSummary("Create a new Yard")
-                                                        .WithDescription("Creates a new Yard entity with the provided name and owner ID. Returns 201 Created with the created Yard details, or validation errors if the request is invalid.\n" +
-                                                            "### Example Request\n" +
-                                                            "```json\n" +
-                                                            "{\n" +
-                                                            "  \"name\": \"Main Yard\",\n" +
-                                                            "  \"ownerId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
-                                                            "}\n" +
-                                                            "```\n\n" +
-                                                            "### Example Response\n" +
-                                                            "```json\n" +
-                                                            "{\n" +
-                                                            "  \"id\": \"7f5c1b8a-49df-4c4b-8b5f-bb56b0d1c8aa\",\n" +
-                                                            "  \"name\": \"Main Yard\",\n" +
-                                                            "  \"ownerId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
-                                                            "}\n" +
-                                                            "```"
-                                                        )
-                                                        .Produces<Response>(StatusCodes.Status201Created)
-                                                        .ProducesValidationProblem()
-                                                        .Produces(StatusCodes.Status400BadRequest);
+                .WithName("CreateYard")
+                .WithSummary("Create a new yard and owner admin")
+                .WithDescription(
+                    "Creates a new yard and automatically registers the provided owner as the first Admin employee for that yard." +
+                    "\n\n**Request Body:**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"name\": \"Main Yard\",\n" +
+                    "  \"ownerName\": \"Maria Souza\",\n" +
+                    "  \"ownerUserId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
+                    "}\n" +
+                    "```" +
+                    "\n\n**Responses:**\n" +
+                    "- `201 Created`: Yard created successfully (returns yard details).\n" +
+                    "- `400 Bad Request`: Validation errors or invalid UUID." +
+                    "\n\n**Example Response (201):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"id\": \"7f5c1b8a-49df-4c4b-8b5f-bb56b0d1c8aa\",\n" +
+                    "  \"name\": \"Main Yard\",\n" +
+                    "  \"ownerId\": \"3d2e8f7b-12c4-4a83-a0af-9d7f86c0b8a1\"\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status201Created)
+                .ProducesValidationProblem()
+                .Produces(StatusCodes.Status400BadRequest);
 
             return group;
         }
