@@ -10,19 +10,25 @@ namespace AutoInsight.EmployeeInvites.Create
         public static RouteGroupBuilder MapEmployeeInviteCreateEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/", HandleAsync)
-                .WithSummary("Create a new Employee Invite")
+                .WithSummary("Send an employee invite for a yard")
                 .WithDescription(
-                    "Creates a new Employee Invite for a specific Yard, based on the provided email, role, and inviter ID. " +
-                    "If the Yard does not exist, returns 404 Not Found. If the request is invalid, returns validation errors.\n\n" +
-                    "### Example Request\n" +
+                    "Creates a new invite for the specified yard after validating the yard exists and the inviter is an Admin employee." +
+                    "\n\n**Path Parameters:**\n" +
+                    "- `yardId` (UUID, required): Yard that will own the invite." +
+                    "\n\n**Request Body:**\n" +
                     "```json\n" +
                     "{\n" +
                     "  \"email\": \"john.doe@example.com\",\n" +
                     "  \"role\": \"Member\",\n" +
                     "  \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
                     "}\n" +
-                    "```\n\n" +
-                    "### Example Response\n" +
+                    "```" +
+                    "\n\n**Responses:**\n" +
+                    "- `201 Created`: Invite created successfully (returns invite details and yard info).\n" +
+                    "- `400 Bad Request`: Validation errors or invalid UUIDs.\n" +
+                    "- `401 Unauthorized`: Inviter exists but doesn't have the Admin role.\n" +
+                    "- `404 Not Found`: Yard or inviter not found." +
+                    "\n\n**Example Response (201):**\n" +
                     "```json\n" +
                     "{\n" +
                     "  \"id\": \"f27f2f3a-5d9b-4e1a-9f23-bc17f1e7e200\",\n" +
@@ -42,6 +48,7 @@ namespace AutoInsight.EmployeeInvites.Create
                 .Produces<Response>(StatusCodes.Status201Created)
                 .ProducesValidationProblem()
                 .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status401Unauthorized)
                 .Produces(StatusCodes.Status404NotFound);
 
             return group;
@@ -77,6 +84,13 @@ namespace AutoInsight.EmployeeInvites.Create
             {
                 return Results.ValidationProblem(validation.ToDictionary());
             }
+
+            var inviter = await db.YardEmployees.FirstOrDefaultAsync(y => y.Id == Guid.Parse(request.InviterId));
+            if (inviter is null)
+                return Results.NotFound(new { error = "Inviter not found" });
+
+            if (inviter.Role != EmployeeRole.Admin)
+                return Results.Unauthorized();
 
             var invite = new EmployeeInvite
             {
