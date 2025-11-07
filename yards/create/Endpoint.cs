@@ -40,7 +40,8 @@ namespace AutoInsight.Yards.Create
             public Validator()
             {
                 RuleFor(x => x.Name).NotEmpty();
-                RuleFor(x => x.OwnerId).NotEmpty().Must(id => Guid.TryParse(id, out _)).WithMessage("'Owner Id' is not a valid UUID");
+                RuleFor(x => x.OwnerName).NotEmpty();
+                RuleFor(x => x.OwnerUserId).NotEmpty().Must(id => Guid.TryParse(id, out _)).WithMessage("'Owner UserId' is not a valid UUID");
             }
         }
 
@@ -52,13 +53,27 @@ namespace AutoInsight.Yards.Create
                 return Results.ValidationProblem(validation.ToDictionary());
             }
 
+            var ownerId = Guid.NewGuid();
+
             var yard = new Yard
             {
                 Name = request.Name,
-                OwnerId = Guid.Parse(request.OwnerId)
+                OwnerId = ownerId
             };
 
             db.Yards.Add(yard);
+
+            var employee = new YardEmployee
+            {
+                Id = ownerId,
+                Name = request.OwnerName,
+                Role = EmployeeRole.Admin,
+                UserId = Guid.Parse(request.OwnerUserId),
+                Yard = yard,
+                YardId = yard.Id,
+            };
+
+            db.YardEmployees.Add(employee);
 
             await db.SaveChangesAsync();
 

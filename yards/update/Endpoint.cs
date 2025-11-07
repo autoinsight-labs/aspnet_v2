@@ -42,6 +42,7 @@ namespace AutoInsight.Yards.Update
             return group;
         }
 
+        // TODO: Validate JWT to check if the user changing the ownerId is the owner
         private class Validator : AbstractValidator<Request>
         {
             public Validator()
