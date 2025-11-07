@@ -10,19 +10,23 @@ namespace AutoInsight.Vehicles.List
             group.MapGet("/", HandleAsync)
                 .WithSummary("List vehicles for a yard")
                 .WithDescription(
-                    "Retrieves a paginated list of vehicles that belong to the specified yard, ordered by their identifier." +
+                    "Retrieves a paginated list of vehicles that belong to the specified yard, ordered by their identifier. By default, only vehicles that are still in the yard (i.e. have not recorded a `leftAt` value) are returned." +
                     "\n\n**Path Parameters:**\n" +
                     "- `yardId` (UUID, required): Yard whose vehicles will be listed." +
                     "\n\n**Query Parameters:**\n" +
                     "- `cursor` (UUID, optional): Use the last returned vehicle id to fetch the next page.\n" +
-                    "- `limit` (integer, optional, default=10, max=100): Maximum number of vehicles to return." +
-                    "\n\n**Example Request:**\n" +
+                    "- `limit` (integer, optional, default=10, max=100): Maximum number of vehicles to return.\n" +
+                    "- `filter` (string, optional, default=active): Controls which vehicles are returned. Accepts `active` (still in yard), `departed` (already left), or `all`." +
+                    "\n\n**Example Requests:**\n" +
                     "```bash\n" +
+                    "# Default behaviour (only active vehicles)\n" +
                     "GET /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83/vehicles?limit=5\n" +
+                    "\n# Fetch only departed vehicles\n" +
+                    "GET /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83/vehicles?filter=departed\n" +
                     "```" +
                     "\n\n**Responses:**\n" +
                     "- `200 OK`: Returns paginated vehicles with pagination metadata.\n" +
-                    "- `400 Bad Request`: Invalid yardId, cursor or limit.\n" +
+                    "- `400 Bad Request`: Invalid yardId, cursor, limit or filter.\n" +
                     "- `404 Not Found`: Yard not found." +
                     "\n\n**Example Response (200):**\n" +
                     "```json\n" +
@@ -42,7 +46,14 @@ namespace AutoInsight.Vehicles.List
             return group;
         }
 
-        private static async Task<IResult> HandleAsync(AppDbContext db, string yardId, string? cursor = null, int limit = 10)
+        private static readonly string[] AllowedFilters = ["active", "departed", "all"];
+
+        private static async Task<IResult> HandleAsync(
+            AppDbContext db,
+            string yardId,
+            string? cursor = null,
+            int limit = 10,
+            string? filter = "active")
         {
             if (!Guid.TryParse(yardId, out var parsedYardId))
             {
@@ -70,6 +81,19 @@ namespace AutoInsight.Vehicles.List
             }
 
             var query = db.Vehicles.AsQueryable().Where(v => v.YardId == parsedYardId);
+
+            var normalizedFilter = (filter ?? "active").Trim().ToLowerInvariant();
+            if (!AllowedFilters.Contains(normalizedFilter))
+            {
+                return Results.BadRequest(new { error = "Filter must be one of: active, departed, all." });
+            }
+
+            query = normalizedFilter switch
+            {
+                "active" => query.Where(v => v.LeftAt == null),
+                "departed" => query.Where(v => v.LeftAt != null),
+                _ => query
+            };
 
             if (cursorGuid.HasValue)
             {
