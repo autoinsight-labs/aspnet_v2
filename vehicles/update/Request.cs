@@ -1,3 +1,3 @@
 namespace AutoInsight.Vehicles.Update;
 
-public record Request(string? OwnerId);
+public record Request(string? Status, string? AssigneeId);
