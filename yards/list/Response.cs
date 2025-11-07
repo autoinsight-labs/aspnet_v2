@@ -7,4 +7,4 @@ public record Response(
     int Count
 ) : PagedResponse<ResponseItem>(Data, PageInfo, Count);
 
-public record ResponseItem(Guid Id, string name, Guid OwnerId);
+public record ResponseItem(Guid Id, string name, string OwnerId);

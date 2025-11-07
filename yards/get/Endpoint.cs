@@ -8,31 +8,48 @@ namespace AutoInsight.Yards.Get
         public static RouteGroupBuilder MapYardGetEndpoint(this RouteGroupBuilder group)
         {
             group.MapGet("/{yardId}", HandleAsync)
-                            .WithSummary("Retrieve details of a Yard by ID")
-                                            .WithDescription(
-                                                            "Fetches detailed information about a Yard by its unique identifier.\n\n" +
-                                                            "**Path Parameter:**\n" +
-                                                            "- `yardId` (UUID): The unique identifier of the Yard.\n\n" +
-                                                            "**Example Request:**\n" +
-                                                            "```bash\n" +
-                                                            "GET /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\n" +
-                                                            "```\n\n" +
-                                                            "**Possible Responses:**\n" +
-                                                            "- `200 OK`: Yard found and returned.\n" +
-                                                            "- `400 Bad Request`: Invalid Yard ID format.\n" +
-                                                            "- `404 Not Found`: Yard not found.\n\n" +
-                                                            "**Example Response (200):**\n" +
-                                                            "```json\n" +
-                                                            "{\n" +
-                                                            "  \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\",\n" +
-                                                            "  \"name\": \"Main Storage Yard\",\n" +
-                                                            "  \"ownerId\": \"d5a90c87-fb15-4df7-86f3-982b6b8e53d1\",\n" +
-                                                            // TODO: Add employee and invites examples when we get to it
-                                                            "  \"employees\": [],\n" +
-                                                            "  \"invites\": []\n" +
-                                                            "}\n" +
-                                                            "```"
-                                            )
+                .WithSummary("Retrieve details of a Yard by ID")
+                .WithDescription(
+                    "Fetches detailed information about a Yard by its unique identifier, including the employees and pending invites associated with it." +
+                    "\n\n**Path Parameter:**\n" +
+                    "- `yardId` (UUID): The unique identifier of the Yard.\n\n" +
+                    "**Example Request:**\n" +
+                    "```bash\n" +
+                    "GET /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\n" +
+                    "```\n\n" +
+                    "**Possible Responses:**\n" +
+                    "- `200 OK`: Yard found and returned.\n" +
+                    "- `400 Bad Request`: Invalid Yard ID format.\n" +
+                    "- `404 Not Found`: Yard not found.\n\n" +
+                    "**Example Response (200):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\",\n" +
+                    "  \"name\": \"Main Storage Yard\",\n" +
+                    "  \"ownerId\": \"firebase-owner-123\",\n" +
+                    "  \"employees\": [\n" +
+                    "    {\n" +
+                    "      \"id\": \"3ae5f7c1-d4e6-44c1-8c36-7f34ab09e321\",\n" +
+                    "      \"name\": \"Maria Souza\",\n" +
+                    "      \"imageUrl\": null,\n" +
+                    "      \"role\": \"Admin\",\n" +
+                    "      \"userId\": \"firebase-user-123\"\n" +
+                    "    }\n" +
+                    "  ],\n" +
+                    "  \"invites\": [\n" +
+                    "    {\n" +
+                    "      \"id\": \"f27f2f3a-5d9b-4e1a-9f23-bc17f1e7e200\",\n" +
+                    "      \"email\": \"john.doe@example.com\",\n" +
+                    "      \"role\": \"Member\",\n" +
+                    "      \"status\": \"Pending\",\n" +
+                    "      \"createdAt\": \"2025-11-03T12:45:30Z\",\n" +
+                    "      \"acceptedAt\": null,\n" +
+                    "      \"inviterId\": \"firebase-owner-123\"\n" +
+                    "    }\n" +
+                    "  ]\n" +
+                    "}\n" +
+                    "```"
+                )
                                             .Produces<Response>(StatusCodes.Status200OK)
                                             .Produces(StatusCodes.Status400BadRequest)
                                             .Produces(StatusCodes.Status404NotFound);

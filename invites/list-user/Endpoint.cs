@@ -29,7 +29,7 @@ namespace AutoInsight.EmployeeInvites.ListUser
                     "      \"status\": \"Accepted\",\n" +
                     "      \"createdAt\": \"2025-11-03T12:45:30Z\",\n" +
                     "      \"acceptedAt\": \"2025-11-03T13:00:00Z\",\n" +
-                    "      \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\",\n" +
+                    "      \"inviterId\": \"firebase-user-123\",\n" +
                     "      \"yard\": {\n" +
                     "        \"id\": \"9a4a2b66-2b29-4de7-82b2-8f3a3af88f66\",\n" +
                     "        \"name\": \"Central Yard\"\n" +

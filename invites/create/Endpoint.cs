@@ -20,7 +20,7 @@ namespace AutoInsight.EmployeeInvites.Create
                     "{\n" +
                     "  \"email\": \"john.doe@example.com\",\n" +
                     "  \"role\": \"Member\",\n" +
-                    "  \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
+                    "  \"inviterId\": \"firebase-user-123\"\n" +
                     "}\n" +
                     "```" +
                     "\n\n**Responses:**\n" +
@@ -37,7 +37,7 @@ namespace AutoInsight.EmployeeInvites.Create
                     "  \"status\": \"Pending\",\n" +
                     "  \"createdAt\": \"2025-11-03T12:45:30Z\",\n" +
                     "  \"acceptedAt\": null,\n" +
-                    "  \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\",\n" +
+                    "  \"inviterId\": \"firebase-user-123\",\n" +
                     "  \"yard\": {\n" +
                     "    \"id\": \"9a4a2b66-2b29-4de7-82b2-8f3a3af88f66\",\n" +
                     "    \"name\": \"Central Yard\"\n" +
@@ -61,7 +61,9 @@ namespace AutoInsight.EmployeeInvites.Create
                 RuleFor(x => x.Email).EmailAddress();
                 RuleFor(x => x.Role).NotEmpty().Must(BeAValidRole)
                                 .WithMessage("Role must be one of: Admin, Member"); ;
-                RuleFor(x => x.InviterId).NotEmpty().Must(id => Guid.TryParse(id, out _)).WithMessage("'Inviter Id' is not a valid UUID");
+                RuleFor(x => x.InviterId)
+                    .NotEmpty()
+                    .MaximumLength(128);
             }
 
             private bool BeAValidRole(string role) =>
@@ -85,7 +87,7 @@ namespace AutoInsight.EmployeeInvites.Create
                 return Results.ValidationProblem(validation.ToDictionary());
             }
 
-            var inviter = await db.YardEmployees.FirstOrDefaultAsync(y => y.Id == Guid.Parse(request.InviterId));
+            var inviter = await db.YardEmployees.FirstOrDefaultAsync(y => y.YardId == parsedYardId && y.UserId == request.InviterId);
             if (inviter is null)
                 return Results.NotFound(new { error = "Inviter not found" });
 
@@ -96,7 +98,7 @@ namespace AutoInsight.EmployeeInvites.Create
             {
                 Email = request.Email,
                 Role = Enum.Parse<EmployeeRole>(request.Role, true),
-                InviterId = Guid.Parse(request.InviterId),
+                InviterId = request.InviterId,
                 YardId = parsedYardId,
                 Yard = yard,
             };

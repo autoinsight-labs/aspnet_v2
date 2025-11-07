@@ -32,7 +32,7 @@ namespace AutoInsight.EmployeeInvites.List
                     "      \"status\": \"Accepted\",\n" +
                     "      \"createdAt\": \"2025-11-03T12:45:30Z\",\n" +
                     "      \"acceptedAt\": \"2025-11-03T13:00:00Z\",\n" +
-                    "      \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
+                    "      \"inviterId\": \"firebase-user-123\"\n" +
                     "    },\n" +
                     "    {\n" +
                     "      \"id\": \"d2fa5c39-4c19-4b0a-ae44-dcd4b74a4b2a\",\n" +
@@ -41,7 +41,7 @@ namespace AutoInsight.EmployeeInvites.List
                     "      \"status\": \"Pending\",\n" +
                     "      \"createdAt\": \"2025-11-03T13:10:00Z\",\n" +
                     "      \"acceptedAt\": null,\n" +
-                    "      \"inviterId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
+                    "      \"inviterId\": \"firebase-user-123\"\n" +
                     "    }\n" +
                     "  ],\n" +
                     "  \"pageInfo\": {\n" +

@@ -15,5 +15,5 @@ public record ResponseItem(
     string Status,
     DateTime CreatedAt,
     DateTime? AcceptedAt,
-    Guid InviterId
+    string InviterId
 );

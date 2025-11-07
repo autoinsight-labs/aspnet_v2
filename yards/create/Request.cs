@@ -1,3 +1,3 @@
 namespace AutoInsight.Yards.Create;
 
-public record Request(string Name, string OwnerName, string OwnerId);
+public record Request(string Name, string OwnerName);

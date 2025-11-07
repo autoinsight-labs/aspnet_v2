@@ -15,8 +15,7 @@ namespace AutoInsight.Models
         public InviteStatus Status { get; set; } = InviteStatus.Pending;
         public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
         public DateTime? AcceptedAt { get; set; }
-
-        public required Guid InviterId { get; set; }
+        public required string InviterId { get; set; }
 
         public required Guid YardId { get; init; }
         public required Yard Yard { get; set; }

@@ -18,7 +18,7 @@ namespace AutoInsight.EmployeeInvites.Accept
                     "**Request Body:**\n" +
                     "- `name` (string, required): The name of the employee accepting the invite.\n" +
                     "- `imageUrl` (string, optional): URL to the employee’s profile picture.\n" +
-                    "- `userId` (UUID, required): The unique identifier of the user accepting the invite.\n\n" +
+                    "- `userId` (string, required): The Firebase user identifier of the person accepting the invite.\n\n" +
                     "**Example Request:**\n" +
                     "```bash\n" +
                     "POST /v2/employee-invites/91af237a-59db-4c13-bf37-0cf6f3ec5a94/accept\n" +
@@ -27,7 +27,7 @@ namespace AutoInsight.EmployeeInvites.Accept
                     "{\n" +
                     "  \"name\": \"Arthur Mariano\",\n" +
                     "  \"imageUrl\": \"https://example.com/avatar.png\",\n" +
-                    "  \"userId\": \"d5a90c87-fb15-4df7-86f3-982b6b8e53d1\"\n" +
+                    "  \"userId\": \"firebase-user-123\"\n" +
                     "}\n" +
                     "```\n\n" +
                     "**Possible Responses:**\n" +
@@ -55,7 +55,9 @@ namespace AutoInsight.EmployeeInvites.Accept
                         .WithMessage("'ImageUrl' must be a valid URL.");
                 });
 
-                RuleFor(x => x.UserId).NotEmpty().Must(id => Guid.TryParse(id, out _)).WithMessage("'User Id' is not a valid UUID");
+                RuleFor(x => x.UserId)
+                    .NotEmpty()
+                    .MaximumLength(128);
             }
         }
 
@@ -89,7 +91,7 @@ namespace AutoInsight.EmployeeInvites.Accept
                 Name = request.Name,
                 ImageUrl = request.ImageUrl,
                 Role = invite.Role,
-                UserId = Guid.Parse(request.UserId),
+                UserId = request.UserId,
                 YardId = invite.YardId,
                 Yard = invite.Yard
             };

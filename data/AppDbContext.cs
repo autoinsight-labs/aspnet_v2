@@ -19,6 +19,13 @@ namespace AutoInsight.Data
             modelBuilder.HasPostgresEnum<VehicleStatus>();
             modelBuilder.HasPostgresEnum<InviteStatus>();
 
+            modelBuilder.Entity<Yard>(entity =>
+            {
+                entity.ToTable("yards");
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.OwnerId).IsRequired().HasMaxLength(128);
+            });
+
             modelBuilder.Entity<Vehicle>(entity =>
             {
                 entity.ToTable("vehicles");
@@ -46,7 +53,7 @@ namespace AutoInsight.Data
                 entity.ToTable("yard_employees");
                 entity.Property(e => e.Role).HasColumnType("employee_role");
                 entity.Property(e => e.Name).IsRequired();
-                entity.Property(e => e.UserId).IsRequired();
+                entity.Property(e => e.UserId).IsRequired().HasMaxLength(128);
                 entity.Property(e => e.YardId).IsRequired();
 
                 entity.HasOne(e => e.Yard)
@@ -63,7 +70,7 @@ namespace AutoInsight.Data
                 entity.Property(e => e.Role).HasColumnType("employee_role");
                 entity.Property(e => e.Status).HasColumnType("invite_status");
                 entity.Property(e => e.Email).IsRequired();
-                entity.Property(e => e.InviterId).IsRequired();
+                entity.Property(e => e.InviterId).IsRequired().HasMaxLength(128);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
                 entity.HasOne(e => e.Yard)

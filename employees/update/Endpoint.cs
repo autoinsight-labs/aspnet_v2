@@ -36,7 +36,7 @@ namespace AutoInsight.YardEmployees.Update
                     "  \"name\": \"Maria Souza\",\n" +
                     "  \"imageUrl\": \"https://cdn.example.com/avatar-maria.png\",\n" +
                     "  \"role\": \"Admin\",\n" +
-                    "  \"userId\": \"21e8c4e4-d38b-47cf-8022-f4bbf2d5f212\"\n" +
+                    "  \"userId\": \"firebase-user-123\"\n" +
                     "}\n" +
                     "```"
                 )

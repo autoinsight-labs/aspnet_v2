@@ -1,4 +1,6 @@
+using AutoInsight.Auth;
 using AutoInsight.Data;
+using AutoInsight.Models;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +13,7 @@ namespace AutoInsight.Yards.Update
             group.MapPatch("/{yardId}", HandleAsync)
                 .WithSummary("Update a Yard partially")
                 .WithDescription(
-                    "Updates one or more fields of an existing Yard identified by its ID.\n\n" +
+                    "Updates one or more fields of an existing Yard identified by its ID. Only employees with the Admin role for the yard may update it, and the OwnerId can only be changed by the current owner.\n\n" +
                     "This endpoint supports partial updates — only the provided fields will be modified.\n\n" +
                     "**Path Parameter:**\n" +
                     "- `yardId` (UUID): The unique identifier of the Yard to update.\n\n" +
@@ -19,24 +21,28 @@ namespace AutoInsight.Yards.Update
                     "```json\n" +
                     "{\n" +
                     "  \"name\": \"Updated Yard Name\",\n" +
-                    "  \"ownerId\": \"9f4f93c6-56e1-4f8f-a5e1-8b6b654a09dc\"\n" +
+                    "  \"ownerId\": \"firebase-user-123\"\n" +
                     "}\n" +
                     "```\n\n" +
                     "**Possible Responses:**\n" +
                     "- `200 OK`: Returns the updated Yard.\n" +
                     "- `400 Bad Request`: Invalid Yard ID or payload.\n" +
+                    "- `401 Unauthorized`: Missing or invalid bearer token.\n" +
+                    "- `403 Forbidden`: User is not an Admin for the yard or not the owner when attempting to transfer ownership.\n" +
                     "- `404 Not Found`: Yard does not exist.\n" +
                     "**Example Successful Response (200):**\n" +
                     "```json\n" +
                     "{\n" +
                     "  \"id\": \"9a3b2b1d-7e54-4b5a-93f3-5a4bfa351b1d\",\n" +
                     "  \"name\": \"Updated Yard Name\",\n" +
-                    "  \"ownerId\": \"9f4f93c6-56e1-4f8f-a5e1-8b6b654a09dc\"\n" +
+                    "  \"ownerId\": \"firebase-user-123\"\n" +
                     "}\n" +
                     "```"
                 )
                 .Produces<Response>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .Produces(StatusCodes.Status403Forbidden)
                 .Produces(StatusCodes.Status404NotFound)
                 .ProducesValidationProblem();
             return group;
@@ -56,15 +62,17 @@ namespace AutoInsight.Yards.Update
                 When(x => x.OwnerId is not null, () =>
                 {
                     RuleFor(x => x.OwnerId)
-                                        .NotEmpty()
-                                        .Must(id => Guid.TryParse(id, out _))
-                                        .WithMessage("'Owner Id' is not a valid UUID");
+                        .NotEmpty()
+                        .MaximumLength(128);
                 });
             }
         }
 
-        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string yardId)
+        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string yardId, HttpContext httpContext)
         {
+            if (!httpContext.TryGetAuthenticatedUser(out var user) || user is null)
+                return Results.Unauthorized();
+
             if (!Guid.TryParse(yardId, out var parsedYardId))
                 return Results.BadRequest(new { error = "'Yard Id' must be a valid UUID." });
 
@@ -80,8 +88,26 @@ namespace AutoInsight.Yards.Update
                 return Results.NotFound(new { error = "Yard not found" });
             }
 
-            if (request.Name is not null) yard.Name = request.Name;
-            if (request.OwnerId is not null) yard.OwnerId = Guid.Parse(request.OwnerId);
+            var employee = await db.YardEmployees.FirstOrDefaultAsync(e => e.YardId == parsedYardId && e.UserId == user.UserId);
+            if (employee is null || employee.Role != EmployeeRole.Admin)
+            {
+                return Results.Json(new { error = "Only yard admins can update this yard." }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            if (request.OwnerId is not null)
+            {
+                if (yard.OwnerId != user.UserId)
+                {
+                    return Results.Json(new { error = "Only the current owner can transfer ownership." }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
+                yard.OwnerId = request.OwnerId;
+            }
+
+            if (request.Name is not null)
+            {
+                yard.Name = request.Name;
+            }
 
             await db.SaveChangesAsync();
 

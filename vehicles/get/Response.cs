@@ -10,4 +10,4 @@ public record Response(
     AssigneeResponse? Assignee
 );
 
-public record AssigneeResponse(Guid Id, string Name, string? ImageUrl, string Role, Guid UserId);
+public record AssigneeResponse(Guid Id, string Name, string? ImageUrl, string Role, string UserId);

@@ -12,7 +12,7 @@ namespace AutoInsight.Models
         public required string Name { get; set; }
         public string? ImageUrl { get; set; }
         public required EmployeeRole Role { get; set; }
-        public Guid UserId { get; init; }
+        public required string UserId { get; init; }
 
         public required Guid YardId { get; set; }
         public required Yard Yard { get; set; }

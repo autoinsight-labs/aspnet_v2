@@ -1,3 +1,4 @@
+using AutoInsight.Auth;
 using AutoInsight.Yards;
 using AutoInsight.Vehicles;
 using AutoInsight.EmployeeInvites;
@@ -33,6 +34,8 @@ if (app.Environment.IsDevelopment())
         options.AddDocument("v2", "API v2", "/openapi/v2.json", isDefault: true);
     });
 }
+
+app.UseAuthenticatedUserExtraction();
 
 app.MapGroup("/v2")
     .MapYardEnpoints()
