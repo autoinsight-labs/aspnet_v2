@@ -9,7 +9,41 @@ namespace AutoInsight.Vehicles.Update
     {
         public static RouteGroupBuilder MapVehicleUpdateEndpoint(this RouteGroupBuilder group)
         {
-            group.MapPatch("/{vehicleId}", HandleAsync);
+            group.MapPatch("/{vehicleId}", HandleAsync)
+                .WithSummary("Update a vehicle status or assignee")
+                .WithDescription(
+                    "Updates the status and/or assignee of a vehicle in the specified yard. Vehicles that are `Cancelled` or `Finished` cannot be updated." +
+                    "\n\n**Path Parameters:**\n" +
+                    "- `yardId` (UUID, required): Yard that owns the vehicle.\n" +
+                    "- `vehicleId` (UUID, required): Vehicle identifier." +
+                    "\n\n**Request Body (partial):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"status\": \"OnService\",\n" +
+                    "  \"assigneeId\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\"\n" +
+                    "}\n" +
+                    "```" +
+                    "\n\n**Responses:**\n" +
+                    "- `200 OK`: Vehicle successfully updated.\\n" +
+                    "- `400 Bad Request`: Invalid identifiers, request payload or forbidden state transition (including validation errors).\\n" +
+                    "- `404 Not Found`: Yard, vehicle or assignee not found." +
+                    "\n\n**Example Response (200):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"id\": \"3fd7b234-11aa-44f5-9a0a-0c6d9ad54a6f\",\n" +
+                    "  \"plate\": \"ABC1D23\",\n" +
+                    "  \"model\": \"MottuSport110i\",\n" +
+                    "  \"status\": \"OnService\",\n" +
+                    "  \"enteredAt\": \"2025-11-07T10:15:32Z\",\n" +
+                    "  \"leftAt\": null,\n" +
+                    "  \"assigneeId\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\"\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .ProducesValidationProblem()
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             return group;
         }

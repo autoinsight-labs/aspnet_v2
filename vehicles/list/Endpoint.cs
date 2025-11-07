@@ -7,7 +7,37 @@ namespace AutoInsight.Vehicles.List
     {
         public static RouteGroupBuilder MapVehicleListEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/", HandleAsync);
+            group.MapGet("/", HandleAsync)
+                .WithSummary("List vehicles for a yard")
+                .WithDescription(
+                    "Retrieves a paginated list of vehicles that belong to the specified yard, ordered by their identifier." +
+                    "\n\n**Path Parameters:**\n" +
+                    "- `yardId` (UUID, required): Yard whose vehicles will be listed." +
+                    "\n\n**Query Parameters:**\n" +
+                    "- `cursor` (UUID, optional): Use the last returned vehicle id to fetch the next page.\n" +
+                    "- `limit` (integer, optional, default=10, max=100): Maximum number of vehicles to return." +
+                    "\n\n**Example Request:**\n" +
+                    "```bash\n" +
+                    "GET /v2/yards/6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83/vehicles?limit=5\n" +
+                    "```" +
+                    "\n\n**Responses:**\n" +
+                    "- `200 OK`: Returns paginated vehicles with pagination metadata.\n" +
+                    "- `400 Bad Request`: Invalid yardId, cursor or limit.\n" +
+                    "- `404 Not Found`: Yard not found." +
+                    "\n\n**Example Response (200):**\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"data\": [\n" +
+                    "    { \"id\": \"3fd7b234-11aa-44f5-9a0a-0c6d9ad54a6f\", \"plate\": \"ABC1D23\", \"model\": \"MottuSport110i\", \"status\": \"Waiting\", \"enteredAt\": \"2025-11-07T10:15:32Z\", \"leftAt\": null, \"assigneeId\": null }\n" +
+                    "  ],\n" +
+                    "  \"pageInfo\": { \"nextCursor\": null, \"hasNext\": false },\n" +
+                    "  \"count\": 1\n" +
+                    "}\n" +
+                    "```"
+                )
+                .Produces<Response>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status404NotFound);
 
             return group;
         }
