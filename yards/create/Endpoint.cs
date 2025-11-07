@@ -18,7 +18,7 @@ namespace AutoInsight.Yards.Create
                     "{\n" +
                     "  \"name\": \"Main Yard\",\n" +
                     "  \"ownerName\": \"Maria Souza\",\n" +
-                    "  \"ownerUserId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
+                    "  \"ownerId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
                     "}\n" +
                     "```" +
                     "\n\n**Responses:**\n" +
@@ -29,7 +29,7 @@ namespace AutoInsight.Yards.Create
                     "{\n" +
                     "  \"id\": \"7f5c1b8a-49df-4c4b-8b5f-bb56b0d1c8aa\",\n" +
                     "  \"name\": \"Main Yard\",\n" +
-                    "  \"ownerId\": \"3d2e8f7b-12c4-4a83-a0af-9d7f86c0b8a1\"\n" +
+                    "  \"ownerId\": \"550e8400-e29b-41d4-a716-446655440000\"\n" +
                     "}\n" +
                     "```"
                 )
@@ -46,7 +46,7 @@ namespace AutoInsight.Yards.Create
             {
                 RuleFor(x => x.Name).NotEmpty();
                 RuleFor(x => x.OwnerName).NotEmpty();
-                RuleFor(x => x.OwnerUserId).NotEmpty().Must(id => Guid.TryParse(id, out _)).WithMessage("'Owner UserId' is not a valid UUID");
+                RuleFor(x => x.OwnerId).NotEmpty().Must(id => Guid.TryParse(id, out _)).WithMessage("'Owner Id' is not a valid UUID");
             }
         }
 
@@ -58,22 +58,19 @@ namespace AutoInsight.Yards.Create
                 return Results.ValidationProblem(validation.ToDictionary());
             }
 
-            var ownerId = Guid.NewGuid();
-
             var yard = new Yard
             {
                 Name = request.Name,
-                OwnerId = ownerId
+                OwnerId = Guid.Parse(request.OwnerId)
             };
 
             db.Yards.Add(yard);
 
             var employee = new YardEmployee
             {
-                Id = ownerId,
                 Name = request.OwnerName,
                 Role = EmployeeRole.Admin,
-                UserId = Guid.Parse(request.OwnerUserId),
+                UserId = Guid.Parse(request.OwnerId),
                 Yard = yard,
                 YardId = yard.Id,
             };
