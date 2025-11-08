@@ -4,6 +4,7 @@ public record Response(
     Guid Id,
     string name,
     string OwnerId,
+    int Capacity,
     ICollection<EmployeeResponse> Employees,
     ICollection<InviteResponse> Invites
 );

@@ -29,8 +29,8 @@ namespace AutoInsight.Yards.List
                     "```json\n" +
                     "{\n" +
                     "  \"data\": [\n" +
-                    "    { \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\", \"name\": \"Main Storage Yard\", \"ownerId\": \"firebase-owner-123\" },\n" +
-                    "    { \"id\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\", \"name\": \"Secondary Lot\", \"ownerId\": \"firebase-owner-456\" }\n" +
+                    "    { \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\", \"name\": \"Main Storage Yard\", \"ownerId\": \"firebase-owner-123\", \"capacity\": 120 },\n" +
+                    "    { \"id\": \"7fbd32a2-1b78-4a2e-bf53-83f1c1fdd92b\", \"name\": \"Secondary Lot\", \"ownerId\": \"firebase-owner-456\", \"capacity\": 90 }\n" +
                     "  ],\n" +
                     "  \"pageInfo\": {\n" +
                     "    \"nextCursor\": \"9f1f3a93-bf6d-4028-91cb-238aaf3b2368\",\n" +
@@ -85,7 +85,7 @@ namespace AutoInsight.Yards.List
             }
 
             var responseItems = yards
-                .Select(y => new ResponseItem(y.Id, y.Name, y.OwnerId))
+                .Select(y => new ResponseItem(y.Id, y.Name, y.OwnerId, y.Capacity))
                 .ToList();
 
             var response = new Response(

@@ -18,7 +18,8 @@ namespace AutoInsight.Yards.Create
                     "```json\n" +
                     "{\n" +
                     "  \"name\": \"Main Yard\",\n" +
-                    "  \"ownerName\": \"Maria Souza\"\n" +
+                    "  \"ownerName\": \"Maria Souza\",\n" +
+                    "  \"capacity\": 120\n" +
                     "}\n" +
                     "```" +
                     "\n\n**Responses:**\n" +
@@ -30,7 +31,8 @@ namespace AutoInsight.Yards.Create
                     "{\n" +
                     "  \"id\": \"7f5c1b8a-49df-4c4b-8b5f-bb56b0d1c8aa\",\n" +
                     "  \"name\": \"Main Yard\",\n" +
-                    "  \"ownerId\": \"firebase-user-123\"\n" +
+                    "  \"ownerId\": \"firebase-user-123\",\n" +
+                    "  \"capacity\": 120\n" +
                     "}\n" +
                     "```"
                 )
@@ -48,6 +50,7 @@ namespace AutoInsight.Yards.Create
             {
                 RuleFor(x => x.Name).NotEmpty();
                 RuleFor(x => x.OwnerName).NotEmpty();
+                RuleFor(x => x.Capacity).GreaterThan(0);
             }
         }
 
@@ -67,7 +70,8 @@ namespace AutoInsight.Yards.Create
             var yard = new Yard
             {
                 Name = request.Name,
-                OwnerId = user.UserId
+                OwnerId = user.UserId,
+                Capacity = request.Capacity
             };
 
             db.Yards.Add(yard);
@@ -85,7 +89,7 @@ namespace AutoInsight.Yards.Create
 
             await db.SaveChangesAsync();
 
-            var response = new Response(yard.Id, yard.Name, yard.OwnerId);
+            var response = new Response(yard.Id, yard.Name, yard.OwnerId, yard.Capacity);
             return Results.Created($"/v2/yards/{yard.Id}", response);
         }
     }

@@ -21,7 +21,8 @@ namespace AutoInsight.Yards.Update
                     "```json\n" +
                     "{\n" +
                     "  \"name\": \"Updated Yard Name\",\n" +
-                    "  \"ownerId\": \"firebase-user-123\"\n" +
+                    "  \"ownerId\": \"firebase-user-123\",\n" +
+                    "  \"capacity\": 150\n" +
                     "}\n" +
                     "```\n\n" +
                     "**Possible Responses:**\n" +
@@ -35,7 +36,8 @@ namespace AutoInsight.Yards.Update
                     "{\n" +
                     "  \"id\": \"9a3b2b1d-7e54-4b5a-93f3-5a4bfa351b1d\",\n" +
                     "  \"name\": \"Updated Yard Name\",\n" +
-                    "  \"ownerId\": \"firebase-user-123\"\n" +
+                    "  \"ownerId\": \"firebase-user-123\",\n" +
+                    "  \"capacity\": 150\n" +
                     "}\n" +
                     "```"
                 )
@@ -64,6 +66,12 @@ namespace AutoInsight.Yards.Update
                     RuleFor(x => x.OwnerId)
                         .NotEmpty()
                         .MaximumLength(128);
+                });
+                When(x => x.Capacity is not null, () =>
+                {
+                    RuleFor(x => x.Capacity!.Value)
+                        .GreaterThan(0)
+                        .WithMessage("Capacity must be greater than zero.");
                 });
             }
         }
@@ -109,9 +117,14 @@ namespace AutoInsight.Yards.Update
                 yard.Name = request.Name;
             }
 
+            if (request.Capacity is not null)
+            {
+                yard.Capacity = request.Capacity.Value;
+            }
+
             await db.SaveChangesAsync();
 
-            var response = new Response(yard.Id, yard.Name, yard.OwnerId);
+            var response = new Response(yard.Id, yard.Name, yard.OwnerId, yard.Capacity);
             return Results.Ok(response);
         }
     }

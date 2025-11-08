@@ -4,6 +4,7 @@ using AutoInsight.Vehicles;
 using AutoInsight.EmployeeInvites;
 using AutoInsight.YardEmployees;
 using AutoInsight.Data;
+using AutoInsight.ML;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using AutoInsight.Models;
@@ -23,6 +24,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                 }
                 )
         .UseSnakeCaseNamingConvention());
+
+builder.Services.AddSingleton<IYardCapacityForecastService, YardCapacityForecastService>();
 
 var app = builder.Build();
 

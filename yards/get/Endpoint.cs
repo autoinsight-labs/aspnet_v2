@@ -27,6 +27,7 @@ namespace AutoInsight.Yards.Get
                     "  \"id\": \"6b1b36c2-8f63-4c2b-b3df-9c5d9cfefb83\",\n" +
                     "  \"name\": \"Main Storage Yard\",\n" +
                     "  \"ownerId\": \"firebase-owner-123\",\n" +
+                    "  \"capacity\": 120,\n" +
                     "  \"employees\": [\n" +
                     "    {\n" +
                     "      \"id\": \"3ae5f7c1-d4e6-44c1-8c36-7f34ab09e321\",\n" +
@@ -73,8 +74,9 @@ namespace AutoInsight.Yards.Get
 
             var response = new Response(
                         yard.Id,
-                        yard.Name,
-                        yard.OwnerId,
+            yard.Name,
+            yard.OwnerId,
+            yard.Capacity,
                         yard.Employees.Select(e =>
                                 new EmployeeResponse(
                                     e.Id,
