@@ -1,6 +1,7 @@
 using AutoInsight.Data;
 using AutoInsight.ML;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace AutoInsight.Yards.CapacityForecast;
 
@@ -14,7 +15,7 @@ public static class Endpoint
         group.MapGet("/{yardId}/capacity-forecast", HandleAsync)
             .WithSummary("Forecast yard vehicle capacity for upcoming hours")
             .WithDescription(
-                "Generates a short-term forecast of the expected number of vehicles inside a yard using an ML.NET regression model trained over synthetic operational patterns." +
+                "Generates a short-term forecast of the expected number of vehicles inside a yard using the latest captured occupancy snapshots. When historical data is limited the service falls back to adaptive heuristics." +
                 "\n\n**Path Parameter:**\n" +
                 "- `yardId` (UUID): Identifier of the yard to forecast.\n" +
                 "\n**Query Parameters:**\n" +
@@ -36,7 +37,7 @@ public static class Endpoint
         return group;
     }
 
-    private static async Task<IResult> HandleAsync(AppDbContext db, IYardCapacityForecastService forecastService, string yardId, int? horizonHours)
+    private static async Task<IResult> HandleAsync(AppDbContext db, IYardCapacityForecastService forecastService, string yardId, int? horizonHours, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(yardId) || !Guid.TryParse(yardId, out var parsedYardId))
         {
@@ -46,7 +47,7 @@ public static class Endpoint
         var yard = await db.Yards.AsNoTracking()
             .Where(y => y.Id == parsedYardId)
             .Select(y => new { y.Id, y.Capacity })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (yard is null)
         {
@@ -59,7 +60,7 @@ public static class Endpoint
             return Results.BadRequest(new { error = $"'horizonHours' must be between 1 and {MaxHorizon}." });
         }
 
-        var forecast = forecastService.Forecast(parsedYardId, effectiveHorizon, yard.Capacity);
+        var forecast = await forecastService.ForecastAsync(parsedYardId, effectiveHorizon, yard.Capacity, cancellationToken);
         var response = new Response(
             forecast.YardId,
             forecast.GeneratedAt,

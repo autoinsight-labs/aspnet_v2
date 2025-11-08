@@ -5,6 +5,7 @@ using AutoInsight.EmployeeInvites;
 using AutoInsight.YardEmployees;
 using AutoInsight.Data;
 using AutoInsight.ML;
+using AutoInsight.Services;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using AutoInsight.Models;
@@ -12,20 +13,25 @@ using AutoInsight.Models;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi("v2");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-                o =>
-                {
-                    o.MapEnum<VehicleModel>("vehicle_model");
-                    o.MapEnum<EmployeeRole>("employee_role");
-                    o.MapEnum<InviteStatus>("invite_status");
-                    o.MapEnum<VehicleStatus>("vehicle_status");
-                }
-                )
-        .UseSnakeCaseNamingConvention());
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddSingleton<IYardCapacityForecastService, YardCapacityForecastService>();
+void ConfigureDbContext(DbContextOptionsBuilder options)
+    => options.UseNpgsql(
+            connectionString,
+            o =>
+            {
+                o.MapEnum<VehicleModel>("vehicle_model");
+                o.MapEnum<EmployeeRole>("employee_role");
+                o.MapEnum<InviteStatus>("invite_status");
+                o.MapEnum<VehicleStatus>("vehicle_status");
+            })
+        .UseSnakeCaseNamingConvention();
+
+builder.Services.AddDbContext<AppDbContext>(ConfigureDbContext);
+builder.Services.AddDbContextFactory<AppDbContext>(lifetime: ServiceLifetime.Scoped);
+
+builder.Services.AddScoped<IYardCapacitySnapshotService, YardCapacitySnapshotService>();
+builder.Services.AddScoped<IYardCapacityForecastService, YardCapacityForecastService>();
 
 var app = builder.Build();
 

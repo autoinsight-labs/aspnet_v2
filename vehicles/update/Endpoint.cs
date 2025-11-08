@@ -1,5 +1,6 @@
 using AutoInsight.Data;
 using AutoInsight.Models;
+using AutoInsight.Services;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,7 +73,7 @@ namespace AutoInsight.Vehicles.Update
                             Enum.TryParse<VehicleStatus>(status, true, out _);
         }
 
-        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string yardId, string vehicleId)
+        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, IYardCapacitySnapshotService snapshotService, string yardId, string vehicleId)
         {
             if (!Guid.TryParse(yardId, out var parsedYardId))
                 return Results.BadRequest(new { error = "'Yard Id' must be a valid UUID." });
@@ -108,12 +109,31 @@ namespace AutoInsight.Vehicles.Update
                 vehicle.AssigneeId = Guid.Parse(request.AssigneeId);
                 vehicle.Assignee = assignee;
             }
-            if (request.Status is not null) vehicle.Status = Enum.Parse<VehicleStatus>(request.Status);
 
-            if (vehicle.Status == VehicleStatus.Cancelled || vehicle.Status == VehicleStatus.Finished)
-                vehicle.LeftAt = DateTime.UtcNow;
+            var shouldCaptureSnapshot = false;
+            if (request.Status is not null)
+            {
+                var nextStatus = Enum.Parse<VehicleStatus>(request.Status, true);
+                var previousStatus = vehicle.Status;
+
+                if (nextStatus != previousStatus)
+                {
+                    vehicle.Status = nextStatus;
+
+                    if (nextStatus is VehicleStatus.Cancelled or VehicleStatus.Finished)
+                    {
+                        vehicle.LeftAt = DateTime.UtcNow;
+                        shouldCaptureSnapshot = true;
+                    }
+                }
+            }
 
             await db.SaveChangesAsync();
+
+            if (shouldCaptureSnapshot)
+            {
+                await snapshotService.CaptureAsync(yard);
+            }
 
             var response = new Response(
                         vehicle.Id,

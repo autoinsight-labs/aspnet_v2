@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace aspnet.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251108201047_AddCapacityToYard")]
-    partial class AddCapacityToYard
+    [Migration("20251108205146_Models")]
+    partial class Models
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -155,6 +155,38 @@ namespace aspnet.Migrations
                     b.ToTable("yards", (string)null);
                 });
 
+            modelBuilder.Entity("AutoInsight.Models.YardCapacitySnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("capacity");
+
+                    b.Property<DateTime>("CapturedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("captured_at");
+
+                    b.Property<int>("VehiclesInYard")
+                        .HasColumnType("integer")
+                        .HasColumnName("vehicles_in_yard");
+
+                    b.Property<Guid>("YardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("yard_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_yard_capacity_snapshots");
+
+                    b.HasIndex("YardId")
+                        .HasDatabaseName("ix_yard_capacity_snapshots_yard_id");
+
+                    b.ToTable("yard_capacity_snapshots", (string)null);
+                });
+
             modelBuilder.Entity("AutoInsight.Models.YardEmployee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -226,6 +258,18 @@ namespace aspnet.Migrations
                     b.Navigation("Yard");
                 });
 
+            modelBuilder.Entity("AutoInsight.Models.YardCapacitySnapshot", b =>
+                {
+                    b.HasOne("AutoInsight.Models.Yard", "Yard")
+                        .WithMany("CapacitySnapshots")
+                        .HasForeignKey("YardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_yard_capacity_snapshots_yards_yard_id");
+
+                    b.Navigation("Yard");
+                });
+
             modelBuilder.Entity("AutoInsight.Models.YardEmployee", b =>
                 {
                     b.HasOne("AutoInsight.Models.Yard", "Yard")
@@ -240,6 +284,8 @@ namespace aspnet.Migrations
 
             modelBuilder.Entity("AutoInsight.Models.Yard", b =>
                 {
+                    b.Navigation("CapacitySnapshots");
+
                     b.Navigation("Employees");
 
                     b.Navigation("Invites");

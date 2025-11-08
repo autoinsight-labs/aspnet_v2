@@ -24,7 +24,8 @@ namespace aspnet.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "text", nullable: false),
-                    owner_id = table.Column<Guid>(type: "uuid", nullable: false)
+                    owner_id = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    capacity = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -41,7 +42,7 @@ namespace aspnet.Migrations
                     status = table.Column<InviteStatus>(type: "invite_status", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW() AT TIME ZONE 'UTC'"),
                     accepted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    inviter_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    inviter_id = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     yard_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -56,6 +57,27 @@ namespace aspnet.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "yard_capacity_snapshots",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    yard_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    captured_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    vehicles_in_yard = table.Column<int>(type: "integer", nullable: false),
+                    capacity = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_yard_capacity_snapshots", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_yard_capacity_snapshots_yards_yard_id",
+                        column: x => x.yard_id,
+                        principalTable: "yards",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "yard_employees",
                 columns: table => new
                 {
@@ -63,7 +85,7 @@ namespace aspnet.Migrations
                     name = table.Column<string>(type: "text", nullable: false),
                     image_url = table.Column<string>(type: "text", nullable: true),
                     role = table.Column<EmployeeRole>(type: "employee_role", nullable: false),
-                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     yard_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -84,7 +106,6 @@ namespace aspnet.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     plate = table.Column<string>(type: "text", nullable: false),
                     model = table.Column<VehicleModel>(type: "vehicle_model", nullable: false),
-                    owner_id = table.Column<Guid>(type: "uuid", nullable: false),
                     status = table.Column<VehicleStatus>(type: "vehicle_status", nullable: false),
                     entered_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     left_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -124,6 +145,11 @@ namespace aspnet.Migrations
                 column: "yard_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_yard_capacity_snapshots_yard_id",
+                table: "yard_capacity_snapshots",
+                column: "yard_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_yard_employees_yard_id",
                 table: "yard_employees",
                 column: "yard_id");
@@ -137,6 +163,9 @@ namespace aspnet.Migrations
 
             migrationBuilder.DropTable(
                 name: "vehicles");
+
+            migrationBuilder.DropTable(
+                name: "yard_capacity_snapshots");
 
             migrationBuilder.DropTable(
                 name: "yard_employees");

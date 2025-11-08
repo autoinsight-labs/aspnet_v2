@@ -1,11 +1,16 @@
-using System.Security.Cryptography;
+using System.Globalization;
+using System.Linq;
+using AutoInsight.Data;
+using AutoInsight.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
+using System.Threading;
 
 namespace AutoInsight.ML;
 
 public interface IYardCapacityForecastService
 {
-    YardCapacityForecastResult Forecast(Guid yardId, int horizonHours, int capacity);
+    Task<YardCapacityForecastResult> ForecastAsync(Guid yardId, int horizonHours, int capacity, CancellationToken cancellationToken = default);
 }
 
 public sealed record YardCapacityForecastPoint(DateTime Timestamp, int ExpectedVehicles, float OccupancyRatio);
@@ -16,41 +21,18 @@ internal sealed class YardCapacityForecastService : IYardCapacityForecastService
 {
     private const int MinimumHorizon = 1;
     private const int MaximumHorizon = 72;
+    private const int MinimumSnapshotsForTraining = 24;
 
     private readonly MLContext _mlContext;
-    private readonly PredictionEngine<YardCapacityObservation, YardCapacityPrediction> _predictionEngine;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public YardCapacityForecastService()
+    public YardCapacityForecastService(IDbContextFactory<AppDbContext> dbContextFactory)
     {
+        _dbContextFactory = dbContextFactory;
         _mlContext = new MLContext(seed: 7321);
-
-        var syntheticYardIds = GetSyntheticYardIds();
-        var trainingData = syntheticYardIds.SelectMany(GenerateSyntheticObservations).ToList();
-
-        var dataView = _mlContext.Data.LoadFromEnumerable(trainingData);
-
-        var pipeline = _mlContext.Transforms.Concatenate(
-                "Features",
-                nameof(YardCapacityObservation.HourSin),
-                nameof(YardCapacityObservation.HourCos),
-                nameof(YardCapacityObservation.DaySin),
-                nameof(YardCapacityObservation.DayCos),
-                nameof(YardCapacityObservation.YearSin),
-                nameof(YardCapacityObservation.YearCos),
-                nameof(YardCapacityObservation.BaselineLoad),
-                nameof(YardCapacityObservation.PeakLoad),
-                nameof(YardCapacityObservation.WeekendIndicator),
-                nameof(YardCapacityObservation.WeekendAdjustment))
-            .Append(_mlContext.Transforms.NormalizeMinMax("Features"))
-            .Append(_mlContext.Regression.Trainers.FastTree(
-                labelColumnName: nameof(YardCapacityObservation.OccupancyRatio),
-                featureColumnName: "Features"));
-
-        var model = pipeline.Fit(dataView);
-        _predictionEngine = _mlContext.Model.CreatePredictionEngine<YardCapacityObservation, YardCapacityPrediction>(model);
     }
 
-    public YardCapacityForecastResult Forecast(Guid yardId, int horizonHours, int capacity)
+    public async Task<YardCapacityForecastResult> ForecastAsync(Guid yardId, int horizonHours, int capacity, CancellationToken cancellationToken = default)
     {
         if (horizonHours < MinimumHorizon || horizonHours > MaximumHorizon)
         {
@@ -62,126 +44,187 @@ internal sealed class YardCapacityForecastService : IYardCapacityForecastService
             throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity must be greater than zero.");
         }
 
-        var config = CreateSimulationConfig(yardId) with { Capacity = capacity };
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        var snapshots = await dbContext.YardCapacitySnapshots
+            .AsNoTracking()
+            .Where(snapshot => snapshot.YardId == yardId)
+            .OrderBy(snapshot => snapshot.CapturedAt)
+            .ToListAsync(cancellationToken);
+
+        if (snapshots.Count == 0)
+        {
+            var activeVehicles = await dbContext.Vehicles
+                .AsNoTracking()
+                .Where(vehicle => vehicle.YardId == yardId && vehicle.LeftAt == null)
+                .CountAsync(cancellationToken);
+
+            var baseRatio = capacity > 0 ? (float)activeVehicles / capacity : 0f;
+            return BuildPersistenceForecast(yardId, capacity, baseRatio, horizonHours);
+        }
+
+        if (snapshots.Count < MinimumSnapshotsForTraining)
+        {
+            return BuildHeuristicForecast(yardId, capacity, snapshots, horizonHours);
+        }
+
+        var firstTimestamp = snapshots.First().CapturedAt;
+        var lastTimestamp = snapshots.Last().CapturedAt;
+        var baselineHours = GetBaselineHours(firstTimestamp, lastTimestamp);
+
+        var observations = snapshots
+            .Select(snapshot => CreateObservationFromSnapshot(snapshot, firstTimestamp, baselineHours))
+            .ToList();
+
+        var dataView = _mlContext.Data.LoadFromEnumerable(observations);
+
+        var pipeline = _mlContext.Transforms.Concatenate(
+                "Features",
+                nameof(YardCapacityObservation.HourSin),
+                nameof(YardCapacityObservation.HourCos),
+                nameof(YardCapacityObservation.DaySin),
+                nameof(YardCapacityObservation.DayCos),
+                nameof(YardCapacityObservation.WeekSin),
+                nameof(YardCapacityObservation.WeekCos),
+                nameof(YardCapacityObservation.Trend))
+            .Append(_mlContext.Transforms.NormalizeMinMax("Features"))
+            .Append(_mlContext.Regression.Trainers.Sdca(
+                labelColumnName: nameof(YardCapacityObservation.OccupancyRatio),
+                featureColumnName: "Features"));
+
+        var model = pipeline.Fit(dataView);
+        using var predictionEngine = _mlContext.Model.CreatePredictionEngine<YardCapacityObservation, YardCapacityPrediction>(model);
+
         var generatedAt = DateTime.UtcNow;
         var points = new List<YardCapacityForecastPoint>(horizonHours);
 
         for (var offset = 1; offset <= horizonHours; offset++)
         {
             var targetTimestamp = generatedAt.AddHours(offset);
-            var input = CreateInputFromTimestamp(targetTimestamp, config);
-            var prediction = _predictionEngine.Predict(input);
+            var input = CreateObservationFromTimestamp(targetTimestamp, firstTimestamp, baselineHours);
+            var prediction = predictionEngine.Predict(input);
             var ratio = Math.Clamp(prediction.Score, 0f, 1f);
-            var expectedVehicles = (int)Math.Round(ratio * config.Capacity);
+            var expectedVehicles = (int)Math.Round(ratio * capacity);
 
             points.Add(new YardCapacityForecastPoint(targetTimestamp, expectedVehicles, ratio));
         }
 
-    return new YardCapacityForecastResult(yardId, generatedAt, config.Capacity, points);
+        return new YardCapacityForecastResult(yardId, generatedAt, capacity, points);
     }
 
-    private static IEnumerable<YardCapacityObservation> GenerateSyntheticObservations(Guid yardId)
+    private static YardCapacityForecastResult BuildPersistenceForecast(Guid yardId, int capacity, float baseRatio, int horizonHours)
     {
-        var config = CreateSimulationConfig(yardId);
-        var random = CreateRandomForYard(yardId);
+        var ratio = Math.Clamp(baseRatio, 0f, 1f);
+        var generatedAt = DateTime.UtcNow;
+        var points = new List<YardCapacityForecastPoint>(horizonHours);
 
-        var start = DateTime.UtcNow.Date.AddDays(-90);
-        var totalHours = 24 * 90;
-
-        for (var hour = 0; hour < totalHours; hour++)
+        for (var offset = 1; offset <= horizonHours; offset++)
         {
-            var timestamp = start.AddHours(hour);
-            var input = CreateInputFromTimestamp(timestamp, config);
-
-            var weekendBoost = timestamp.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday
-                ? config.WeekendAdjustment
-                : 0f;
-
-            var dailySeasonality = 0.5f + 0.5f * MathF.Sin(GetHourAngle(timestamp) - config.PeakPhase);
-            var yearlySeasonality = 0.5f + 0.5f * MathF.Sin(GetYearAngle(timestamp));
-
-            var occupancyRatio = config.BaseLoad
-                                 + config.PeakLoad * dailySeasonality
-                                 + yearlySeasonality * 0.05f
-                                 + weekendBoost;
-
-            var noise = (float)(random.NextDouble() * 2 - 1) * config.NoiseLevel;
-            occupancyRatio = Math.Clamp(occupancyRatio + noise, 0.05f, 0.98f);
-
-            yield return input with { OccupancyRatio = occupancyRatio };
+            var timestamp = generatedAt.AddHours(offset);
+            var expectedVehicles = (int)Math.Round(ratio * capacity);
+            points.Add(new YardCapacityForecastPoint(timestamp, expectedVehicles, ratio));
         }
+
+        return new YardCapacityForecastResult(yardId, generatedAt, capacity, points);
     }
 
-    private static YardCapacityObservation CreateInputFromTimestamp(DateTime timestamp, YardSimulationConfig config)
+    private static YardCapacityForecastResult BuildHeuristicForecast(Guid yardId, int capacity, IReadOnlyList<YardCapacitySnapshot> snapshots, int horizonHours)
     {
-        var hourAngle = GetHourAngle(timestamp);
-        var dayAngle = GetDayAngle(timestamp);
-        var yearAngle = GetYearAngle(timestamp);
-        var isWeekend = timestamp.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+        var generatedAt = DateTime.UtcNow;
+        var lastSnapshot = snapshots[^1];
+        var fallbackRatio = lastSnapshot.Capacity > 0 ? (float)lastSnapshot.VehiclesInYard / lastSnapshot.Capacity : 0f;
+
+        var averagesByHour = snapshots
+            .GroupBy(snapshot => snapshot.CapturedAt.Hour)
+            .ToDictionary(
+                group => group.Key,
+                group => (float)group
+                    .Where(item => item.Capacity > 0)
+                    .Select(item => item.VehiclesInYard / (float)item.Capacity)
+                    .DefaultIfEmpty(fallbackRatio)
+                    .Average());
+
+        var points = new List<YardCapacityForecastPoint>(horizonHours);
+
+        for (var offset = 1; offset <= horizonHours; offset++)
+        {
+            var timestamp = generatedAt.AddHours(offset);
+            var ratio = averagesByHour.TryGetValue(timestamp.Hour, out var averageRatio)
+                ? averageRatio
+                : fallbackRatio;
+
+            ratio = Math.Clamp(ratio, 0f, 1f);
+            var expectedVehicles = (int)Math.Round(ratio * capacity);
+
+            points.Add(new YardCapacityForecastPoint(timestamp, expectedVehicles, ratio));
+        }
+
+        return new YardCapacityForecastResult(yardId, generatedAt, capacity, points);
+    }
+
+    private static YardCapacityObservation CreateObservationFromSnapshot(YardCapacitySnapshot snapshot, DateTime referenceTimestamp, double baselineHours)
+    {
+        var ratio = snapshot.Capacity > 0 ? snapshot.VehiclesInYard / (float)snapshot.Capacity : 0f;
 
         return new YardCapacityObservation
         {
-            HourSin = MathF.Sin(hourAngle),
-            HourCos = MathF.Cos(hourAngle),
-            DaySin = MathF.Sin(dayAngle),
-            DayCos = MathF.Cos(dayAngle),
-            YearSin = MathF.Sin(yearAngle),
-            YearCos = MathF.Cos(yearAngle),
-            BaselineLoad = config.BaseLoad,
-            PeakLoad = config.PeakLoad,
-            WeekendIndicator = isWeekend ? 1f : 0f,
-            WeekendAdjustment = config.WeekendAdjustment,
-            OccupancyRatio = 0f
+            HourSin = MathF.Sin(GetHourAngle(snapshot.CapturedAt)),
+            HourCos = MathF.Cos(GetHourAngle(snapshot.CapturedAt)),
+            DaySin = MathF.Sin(GetDayAngle(snapshot.CapturedAt)),
+            DayCos = MathF.Cos(GetDayAngle(snapshot.CapturedAt)),
+            WeekSin = MathF.Sin(GetWeekAngle(snapshot.CapturedAt)),
+            WeekCos = MathF.Cos(GetWeekAngle(snapshot.CapturedAt)),
+            Trend = NormalizeTrend(snapshot.CapturedAt, referenceTimestamp, baselineHours),
+            OccupancyRatio = ratio
         };
     }
 
-    private static IEnumerable<Guid> GetSyntheticYardIds() =>
-    [
-        Guid.Parse("11111111-1111-1111-1111-111111111111"),
-        Guid.Parse("22222222-2222-2222-2222-222222222222"),
-        Guid.Parse("33333333-3333-3333-3333-333333333333"),
-        Guid.Parse("44444444-4444-4444-4444-444444444444"),
-        Guid.Parse("55555555-5555-5555-5555-555555555555")
-    ];
+    private static YardCapacityObservation CreateObservationFromTimestamp(DateTime timestamp, DateTime referenceTimestamp, double baselineHours)
+        => new()
+        {
+            HourSin = MathF.Sin(GetHourAngle(timestamp)),
+            HourCos = MathF.Cos(GetHourAngle(timestamp)),
+            DaySin = MathF.Sin(GetDayAngle(timestamp)),
+            DayCos = MathF.Cos(GetDayAngle(timestamp)),
+            WeekSin = MathF.Sin(GetWeekAngle(timestamp)),
+            WeekCos = MathF.Cos(GetWeekAngle(timestamp)),
+            Trend = NormalizeTrend(timestamp, referenceTimestamp, baselineHours),
+            OccupancyRatio = 0f
+        };
 
-    private static YardSimulationConfig CreateSimulationConfig(Guid yardId)
+    private static double GetBaselineHours(DateTime firstTimestamp, DateTime lastTimestamp)
     {
-        Span<byte> guidBytes = stackalloc byte[16];
-        yardId.TryWriteBytes(guidBytes);
-        var hash = SHA256.HashData(guidBytes);
-
-        var baseLoad = 0.35f + (hash[0] / 255f) * 0.35f;
-        var peakLoad = 0.15f + (hash[1] / 255f) * 0.25f;
-        var weekendAdjustment = -0.12f + (hash[2] / 255f) * 0.24f;
-        var noiseLevel = 0.02f + (hash[3] / 255f) * 0.06f;
-        var capacity = 60 + hash[4] % 90;
-        var peakPhase = (hash[5] / 255f) * (float)(2 * Math.PI);
-
-        return new YardSimulationConfig(yardId, capacity, baseLoad, peakLoad, weekendAdjustment, noiseLevel, peakPhase);
+        var totalHours = (lastTimestamp - firstTimestamp).TotalHours;
+        return Math.Max(1d, totalHours);
     }
 
-    private static Random CreateRandomForYard(Guid yardId)
+    private static float NormalizeTrend(DateTime timestamp, DateTime referenceTimestamp, double baselineHours)
     {
-        Span<byte> guidBytes = stackalloc byte[16];
-        yardId.TryWriteBytes(guidBytes);
-        var hash = SHA256.HashData(guidBytes);
-        var seed = BitConverter.ToInt32(hash, 8);
-        return new Random(seed);
+        if (baselineHours <= 0d)
+        {
+            return 0f;
+        }
+
+        var value = (float)((timestamp - referenceTimestamp).TotalHours / baselineHours);
+
+        if (float.IsNaN(value) || float.IsInfinity(value))
+        {
+            return 0f;
+        }
+
+    return Math.Clamp(value, -1f, 2f);
     }
 
     private static float GetHourAngle(DateTime timestamp) => (float)(2 * Math.PI * timestamp.Hour / 24d);
-    private static float GetDayAngle(DateTime timestamp) => (float)(2 * Math.PI * (int)timestamp.DayOfWeek / 7d);
-    private static float GetYearAngle(DateTime timestamp) => (float)(2 * Math.PI * timestamp.DayOfYear / 365d);
-}
 
-internal sealed record YardSimulationConfig(
-    Guid YardId,
-    int Capacity,
-    float BaseLoad,
-    float PeakLoad,
-    float WeekendAdjustment,
-    float NoiseLevel,
-    float PeakPhase);
+    private static float GetDayAngle(DateTime timestamp) => (float)(2 * Math.PI * (int)timestamp.DayOfWeek / 7d);
+
+    private static float GetWeekAngle(DateTime timestamp)
+    {
+        var week = ISOWeek.GetWeekOfYear(timestamp);
+        return (float)(2 * Math.PI * (week - 1) / 53d);
+    }
+}
 
 internal sealed record YardCapacityObservation
 {
@@ -189,12 +232,9 @@ internal sealed record YardCapacityObservation
     public float HourCos { get; init; }
     public float DaySin { get; init; }
     public float DayCos { get; init; }
-    public float YearSin { get; init; }
-    public float YearCos { get; init; }
-    public float BaselineLoad { get; init; }
-    public float PeakLoad { get; init; }
-    public float WeekendIndicator { get; init; }
-    public float WeekendAdjustment { get; init; }
+    public float WeekSin { get; init; }
+    public float WeekCos { get; init; }
+    public float Trend { get; init; }
     public float OccupancyRatio { get; init; }
 }
 

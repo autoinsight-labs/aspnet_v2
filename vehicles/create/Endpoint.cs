@@ -1,5 +1,6 @@
 using AutoInsight.Data;
 using AutoInsight.Models;
+using AutoInsight.Services;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -65,7 +66,7 @@ namespace AutoInsight.Vehicles.Create
                             Enum.TryParse<VehicleModel>(model, true, out _);
         }
 
-        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string yardId)
+        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, IYardCapacitySnapshotService snapshotService, string yardId)
         {
             if (!Guid.TryParse(yardId, out var parsedYardId))
             {
@@ -110,6 +111,7 @@ namespace AutoInsight.Vehicles.Create
             db.Vehicles.Add(vehicle);
 
             await db.SaveChangesAsync();
+            await snapshotService.CaptureAsync(yard);
 
             var response = new Response(
                     vehicle.Id,

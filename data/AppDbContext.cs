@@ -11,6 +11,7 @@ namespace AutoInsight.Data
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
         public DbSet<YardEmployee> YardEmployees => Set<YardEmployee>();
         public DbSet<EmployeeInvite> EmployeeInvites => Set<EmployeeInvite>();
+        public DbSet<YardCapacitySnapshot> YardCapacitySnapshots => Set<YardCapacitySnapshot>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,6 +25,20 @@ namespace AutoInsight.Data
                 entity.ToTable("yards");
                 entity.Property(e => e.Name).IsRequired();
                 entity.Property(e => e.OwnerId).IsRequired().HasMaxLength(128);
+                entity.Property(e => e.Capacity).IsRequired();
+            });
+            modelBuilder.Entity<YardCapacitySnapshot>(entity =>
+            {
+                entity.ToTable("yard_capacity_snapshots");
+                entity.Property(e => e.CapturedAt).IsRequired();
+                entity.Property(e => e.VehiclesInYard).IsRequired();
+                entity.Property(e => e.Capacity).IsRequired();
+
+                entity.HasOne(e => e.Yard)
+                    .WithMany(y => y.CapacitySnapshots)
+                    .HasForeignKey(e => e.YardId)
+                    .IsRequired()
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<Vehicle>(entity =>
