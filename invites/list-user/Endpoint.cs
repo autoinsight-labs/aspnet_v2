@@ -1,4 +1,6 @@
+using AutoInsight.Auth;
 using AutoInsight.Data;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoInsight.EmployeeInvites.ListUser
@@ -7,16 +9,16 @@ namespace AutoInsight.EmployeeInvites.ListUser
     {
         public static RouteGroupBuilder MapEmployeeInviteListUserEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/user/{email}", HandleAsync)
+            group.MapGet("/user", HandleAsync)
                 .WithName("ListEmployeeInvitesByUser")
-                .WithSummary("List Employee Invites by user email")
+                .WithSummary("List Employee Invites for the authenticated user")
                 .WithDescription(
-                    "Retrieves a paginated list of Employee Invites associated with a specific user's email. " +
+                    "Retrieves a paginated list of Employee Invites associated with the authenticated user's email. " +
                     "Supports cursor-based pagination using the `cursor` and `limit` query parameters. " +
                     "If parameters are invalid, returns 400 Bad Request.\n\n" +
                     "### Example Request\n" +
                     "```\n" +
-                    "GET /v2/invites/user/john.doe@example.com?limit=2\n" +
+                    "GET /v2/invites/user?limit=2\n" +
                     "```\n\n" +
                     "### Example Response\n" +
                     "```json\n" +
@@ -45,13 +47,24 @@ namespace AutoInsight.EmployeeInvites.ListUser
                     "```"
                 )
                 .Produces<Response>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status400BadRequest);
+                .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status401Unauthorized);
 
             return group;
         }
 
-        private static async Task<IResult> HandleAsync(AppDbContext db, string email, string? cursor = null, int limit = 10)
+        private static async Task<IResult> HandleAsync(AppDbContext db, HttpContext httpContext, string? cursor = null, int limit = 10)
         {
+            if (!httpContext.TryGetAuthenticatedUser(out var user) || user is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Email))
+            {
+                return Results.BadRequest(new { error = "Authenticated user must have a valid email." });
+            }
+
             if (limit <= 0 || limit > 100)
                 return Results.BadRequest(new { error = "Limit must be between 1 and 100." });
 
@@ -68,7 +81,7 @@ namespace AutoInsight.EmployeeInvites.ListUser
                 cursorGuid = parsed;
             }
 
-            var query = db.EmployeeInvites.Include(i => i.Yard).AsQueryable().Where(i => i.Email == email);
+            var query = db.EmployeeInvites.Include(i => i.Yard).AsQueryable().Where(i => i.Email == user.Email);
 
             if (cursorGuid.HasValue)
             {

@@ -1,3 +1,3 @@
 namespace AutoInsight.EmployeeInvites.Create;
 
-public record Request(string Email, string Role, string InviterId);
+public record Request(string Email, string Role);

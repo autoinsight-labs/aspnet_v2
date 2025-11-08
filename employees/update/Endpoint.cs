@@ -1,3 +1,4 @@
+using AutoInsight.Auth;
 using AutoInsight.Data;
 using AutoInsight.Models;
 using FluentValidation;
@@ -12,7 +13,7 @@ namespace AutoInsight.YardEmployees.Update
             group.MapPatch("/{employeeId}", HandleAsync)
                 .WithSummary("Update an employee's details inside a yard")
                 .WithDescription(
-                    "Performs a partial update on the information of an employee assigned to the specified yard.\n\n" +
+                    "Performs a partial update on the information of an employee assigned to the specified yard. Role changes are restricted to admins, while name and image updates may be performed by admins or the employee themselves.\n\n" +
                     "**Path Parameters:**\n" +
                     "- `yardId` (UUID, required): Identifier of the yard.\n" +
                     "- `employeeId` (UUID, required): Identifier of the employee to update.\n\n" +
@@ -27,6 +28,8 @@ namespace AutoInsight.YardEmployees.Update
                     "**Possible Responses:**\n" +
                     "- `200 OK`: Employee successfully updated.\n" +
                     "- `400 Bad Request`: Invalid yardId, employeeId or payload.\n" +
+                    "- `401 Unauthorized`: Missing or invalid bearer token.\n" +
+                    "- `403 Forbidden`: Requester lacks permission to update the employee.\n" +
                     "- `404 Not Found`: Yard or employee not found.\n" +
                     "- `422 Unprocessable Entity`: Validation errors for provided fields.\n\n" +
                     "**Example Response (200):**\n" +
@@ -43,6 +46,8 @@ namespace AutoInsight.YardEmployees.Update
                 .Produces<Response>(StatusCodes.Status200OK)
                 .ProducesValidationProblem()
                 .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .Produces(StatusCodes.Status403Forbidden)
                 .Produces(StatusCodes.Status404NotFound);
             return group;
         }
@@ -78,8 +83,13 @@ namespace AutoInsight.YardEmployees.Update
                             Enum.TryParse<EmployeeRole>(role, true, out _);
         }
 
-        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string yardId, string employeeId)
+        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string yardId, string employeeId, HttpContext httpContext)
         {
+            if (!httpContext.TryGetAuthenticatedUser(out var user) || user is null)
+            {
+                return Results.Unauthorized();
+            }
+
             if (!Guid.TryParse(yardId, out var parsedYardId))
             {
                 return Results.BadRequest(new { error = "YardId must be a valid UUID." });
@@ -98,10 +108,29 @@ namespace AutoInsight.YardEmployees.Update
                 return Results.ValidationProblem(validation.ToDictionary());
             }
 
-            var employee = await db.YardEmployees.FirstOrDefaultAsync(v => v.Id == parsedEmployeeId);
+            var employee = await db.YardEmployees.FirstOrDefaultAsync(v => v.Id == parsedEmployeeId && v.YardId == parsedYardId);
             if (employee is null)
             {
                 return Results.NotFound(new { error = "Employee not found" });
+            }
+
+            var requester = await db.YardEmployees.FirstOrDefaultAsync(e => e.YardId == parsedYardId && e.UserId == user.UserId);
+            if (requester is null)
+            {
+                return Results.Json(new { error = "You must belong to this yard to update employees." }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            var isAdmin = requester.Role == EmployeeRole.Admin;
+            var isSelf = requester.UserId == employee.UserId;
+
+            if (request.Role is not null && !isAdmin)
+            {
+                return Results.Json(new { error = "Only yard admins can change employee roles." }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            if ((request.Name is not null || request.ImageUrl is not null) && !(isAdmin || isSelf))
+            {
+                return Results.Json(new { error = "Only admins or the employee can update name or image." }, statusCode: StatusCodes.Status403Forbidden);
             }
 
             if (request.Name is not null) employee.Name = request.Name;

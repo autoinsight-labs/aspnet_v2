@@ -1,6 +1,8 @@
+using AutoInsight.Auth;
 using AutoInsight.Data;
 using AutoInsight.Models;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoInsight.EmployeeInvites.Accept
@@ -17,8 +19,7 @@ namespace AutoInsight.EmployeeInvites.Accept
                     "- `inviteId` (UUID, required): The unique identifier of the invite to accept.\n\n" +
                     "**Request Body:**\n" +
                     "- `name` (string, required): The name of the employee accepting the invite.\n" +
-                    "- `imageUrl` (string, optional): URL to the employee’s profile picture.\n" +
-                    "- `userId` (string, required): The Firebase user identifier of the person accepting the invite.\n\n" +
+                    "- `imageUrl` (string, optional): URL to the employee’s profile picture.\n\n" +
                     "**Example Request:**\n" +
                     "```bash\n" +
                     "POST /v2/employee-invites/91af237a-59db-4c13-bf37-0cf6f3ec5a94/accept\n" +
@@ -26,17 +27,20 @@ namespace AutoInsight.EmployeeInvites.Accept
                     "\n" +
                     "{\n" +
                     "  \"name\": \"Arthur Mariano\",\n" +
-                    "  \"imageUrl\": \"https://example.com/avatar.png\",\n" +
-                    "  \"userId\": \"firebase-user-123\"\n" +
+                    "  \"imageUrl\": \"https://example.com/avatar.png\"\n" +
                     "}\n" +
                     "```\n\n" +
                     "**Possible Responses:**\n" +
                     "- `200 OK`: Invite successfully accepted and employee created.\n" +
                     "- `400 Bad Request`: Invalid UUID or invite already accepted/declined.\n" +
+                    "- `401 Unauthorized`: Missing or invalid authentication.\n" +
+                    "- `403 Forbidden`: Authenticated user does not match invite requirements.\n" +
                     "- `404 Not Found`: Invite not found.\n"
                 )
                 .Produces(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .Produces(StatusCodes.Status403Forbidden)
                 .Produces(StatusCodes.Status404NotFound);
 
             return group;
@@ -54,15 +58,16 @@ namespace AutoInsight.EmployeeInvites.Accept
                         .Must(url => Uri.TryCreate(url, UriKind.Absolute, out _))
                         .WithMessage("'ImageUrl' must be a valid URL.");
                 });
-
-                RuleFor(x => x.UserId)
-                    .NotEmpty()
-                    .MaximumLength(128);
             }
         }
 
-        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string inviteId)
+        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string inviteId, HttpContext httpContext)
         {
+            if (!httpContext.TryGetAuthenticatedUser(out var user) || user is null)
+            {
+                return Results.Unauthorized();
+            }
+
             if (!Guid.TryParse(inviteId, out var parsedInviteId))
             {
                 return Results.BadRequest(new { error = "InviteId must be a valid UUID." });
@@ -76,6 +81,11 @@ namespace AutoInsight.EmployeeInvites.Accept
 
             if (invite.Status != InviteStatus.Pending)
                 return Results.BadRequest(new { error = "Invite not available" });
+
+            if (string.IsNullOrWhiteSpace(user.Email) || !string.Equals(invite.Email, user.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.Json(new { error = "You are not allowed to accept this invite." }, statusCode: StatusCodes.Status403Forbidden);
+            }
 
             var validation = await new Validator().ValidateAsync(request);
             if (!validation.IsValid)
@@ -91,7 +101,7 @@ namespace AutoInsight.EmployeeInvites.Accept
                 Name = request.Name,
                 ImageUrl = request.ImageUrl,
                 Role = invite.Role,
-                UserId = request.UserId,
+                UserId = user.UserId,
                 YardId = invite.YardId,
                 Yard = invite.Yard
             };

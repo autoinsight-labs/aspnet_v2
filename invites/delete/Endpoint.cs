@@ -1,4 +1,7 @@
+using AutoInsight.Auth;
 using AutoInsight.Data;
+using AutoInsight.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoInsight.EmployeeInvites.Delete
@@ -25,22 +28,44 @@ namespace AutoInsight.EmployeeInvites.Delete
                 )
                 .Produces<Response>(StatusCodes.Status200OK)
                 .Produces(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .Produces(StatusCodes.Status403Forbidden)
                 .Produces(StatusCodes.Status404NotFound);
 
             return group;
         }
 
-        private static async Task<IResult> HandleAsync(AppDbContext db, string inviteId)
+        private static async Task<IResult> HandleAsync(AppDbContext db, string inviteId, HttpContext httpContext)
         {
+            if (!httpContext.TryGetAuthenticatedUser(out var user) || user is null)
+            {
+                return Results.Unauthorized();
+            }
+
             Guid parsedInviteId;
             if (string.IsNullOrEmpty(inviteId) || !Guid.TryParse(inviteId, out parsedInviteId))
                 return Results.BadRequest(new { error = "'Invite Id' must be a valid UUID." });
 
-            var invite = await db.EmployeeInvites.FirstOrDefaultAsync(v => v.Id == parsedInviteId);
+            var invite = await db.EmployeeInvites
+                .Include(i => i.Yard)
+                .FirstOrDefaultAsync(v => v.Id == parsedInviteId);
 
             if (invite is null)
             {
                 return Results.NotFound(new { error = "Invite not found" });
+            }
+
+            var requester = await db.YardEmployees
+                .FirstOrDefaultAsync(e => e.YardId == invite.YardId && e.UserId == user.UserId);
+
+            if (requester is null)
+            {
+                return Results.Json(new { error = "You must belong to this yard to delete invites." }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            if (requester.Role != EmployeeRole.Admin)
+            {
+                return Results.Json(new { error = "Only yard admins can delete invites." }, statusCode: StatusCodes.Status403Forbidden);
             }
 
             db.EmployeeInvites.Remove(invite);

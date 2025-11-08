@@ -1,6 +1,8 @@
+using AutoInsight.Auth;
 using AutoInsight.Data;
 using AutoInsight.Models;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoInsight.EmployeeInvites.Create
@@ -12,22 +14,22 @@ namespace AutoInsight.EmployeeInvites.Create
             group.MapPost("/", HandleAsync)
                 .WithSummary("Send an employee invite for a yard")
                 .WithDescription(
-                    "Creates a new invite for the specified yard after validating the yard exists and the inviter is an Admin employee." +
+                    "Creates a new invite for the specified yard after validating the yard exists and the authenticated requester is an Admin employee." +
                     "\n\n**Path Parameters:**\n" +
                     "- `yardId` (UUID, required): Yard that will own the invite." +
                     "\n\n**Request Body:**\n" +
                     "```json\n" +
                     "{\n" +
                     "  \"email\": \"john.doe@example.com\",\n" +
-                    "  \"role\": \"Member\",\n" +
-                    "  \"inviterId\": \"firebase-user-123\"\n" +
+                    "  \"role\": \"Member\"\n" +
                     "}\n" +
                     "```" +
                     "\n\n**Responses:**\n" +
                     "- `201 Created`: Invite created successfully (returns invite details and yard info).\n" +
                     "- `400 Bad Request`: Validation errors or invalid UUIDs.\n" +
-                    "- `401 Unauthorized`: Inviter exists but doesn't have the Admin role.\n" +
-                    "- `404 Not Found`: Yard or inviter not found." +
+                    "- `401 Unauthorized`: Missing or invalid authentication.\n" +
+                    "- `403 Forbidden`: Requester belongs to the yard but is not an admin.\n" +
+                    "- `404 Not Found`: Yard not found." +
                     "\n\n**Example Response (201):**\n" +
                     "```json\n" +
                     "{\n" +
@@ -49,6 +51,7 @@ namespace AutoInsight.EmployeeInvites.Create
                 .ProducesValidationProblem()
                 .Produces(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status401Unauthorized)
+                .Produces(StatusCodes.Status403Forbidden)
                 .Produces(StatusCodes.Status404NotFound);
 
             return group;
@@ -61,17 +64,19 @@ namespace AutoInsight.EmployeeInvites.Create
                 RuleFor(x => x.Email).EmailAddress();
                 RuleFor(x => x.Role).NotEmpty().Must(BeAValidRole)
                                 .WithMessage("Role must be one of: Admin, Member"); ;
-                RuleFor(x => x.InviterId)
-                    .NotEmpty()
-                    .MaximumLength(128);
             }
 
             private bool BeAValidRole(string role) =>
                             Enum.TryParse<EmployeeRole>(role, true, out _);
         }
 
-        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string yardId)
+        private static async Task<IResult> HandleAsync(Request request, AppDbContext db, string yardId, HttpContext httpContext)
         {
+            if (!httpContext.TryGetAuthenticatedUser(out var user) || user is null)
+            {
+                return Results.Unauthorized();
+            }
+
             if (!Guid.TryParse(yardId, out var parsedYardId))
             {
                 return Results.BadRequest(new { error = "YardId must be a valid UUID." });
@@ -87,18 +92,22 @@ namespace AutoInsight.EmployeeInvites.Create
                 return Results.ValidationProblem(validation.ToDictionary());
             }
 
-            var inviter = await db.YardEmployees.FirstOrDefaultAsync(y => y.YardId == parsedYardId && y.UserId == request.InviterId);
+            var inviter = await db.YardEmployees.FirstOrDefaultAsync(y => y.YardId == parsedYardId && y.UserId == user.UserId);
             if (inviter is null)
-                return Results.NotFound(new { error = "Inviter not found" });
+            {
+                return Results.Json(new { error = "You must belong to this yard to send invites." }, statusCode: StatusCodes.Status403Forbidden);
+            }
 
             if (inviter.Role != EmployeeRole.Admin)
-                return Results.Unauthorized();
+            {
+                return Results.Json(new { error = "Only yard admins can send invites." }, statusCode: StatusCodes.Status403Forbidden);
+            }
 
             var invite = new EmployeeInvite
             {
                 Email = request.Email,
                 Role = Enum.Parse<EmployeeRole>(request.Role, true),
-                InviterId = request.InviterId,
+                InviterId = inviter.UserId,
                 YardId = parsedYardId,
                 Yard = yard,
             };
