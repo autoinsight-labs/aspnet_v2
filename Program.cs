@@ -53,3 +53,5 @@ app.MapGroup("/v2")
     .MapEmployeeInviteEnpoints();
 
 app.Run();
+
+public partial class Program;
