@@ -100,7 +100,8 @@ namespace AutoInsight.Vehicles.Create
                     return Results.BadRequest(new { error = "AssigneeId must be a valid UUID." });
                 }
 
-                var employee = await db.YardEmployees.FirstOrDefaultAsync(y => y.Id == parsedAssigneeId);
+                var employee = await db.YardEmployees
+                    .FirstOrDefaultAsync(y => y.Id == parsedAssigneeId && y.YardId == parsedYardId);
                 if (employee is null)
                     return Results.NotFound(new { error = "Employee not found" });
 

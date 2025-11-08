@@ -73,7 +73,7 @@ namespace AutoInsight.Vehicles.List
                 if (!Guid.TryParse(cursor, out var parsed))
                     return Results.BadRequest(new { error = "Cursor must be a valid UUID." });
 
-                bool exists = await db.Vehicles.AnyAsync(y => y.Id == parsed);
+                bool exists = await db.Vehicles.AnyAsync(y => y.Id == parsed && y.YardId == parsedYardId);
                 if (!exists)
                     return Results.BadRequest(new { error = "Cursor not found." });
 

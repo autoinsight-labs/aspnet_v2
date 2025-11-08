@@ -59,7 +59,7 @@ namespace AutoInsight.Vehicles.Get
                 return Results.BadRequest(new { error = "'Vehicle Id' must be a valid UUID." });
 
             var vehicle = await db.Vehicles.Include(v => v.Assignee)
-                .FirstOrDefaultAsync(y => y.Id == parsedVehicleId);
+                .FirstOrDefaultAsync(y => y.Id == parsedVehicleId && y.YardId == parsedYardId);
 
             if (vehicle is null)
                 return Results.NotFound(new { error = "Vehicle not found" });

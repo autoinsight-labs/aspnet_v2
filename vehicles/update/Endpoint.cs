@@ -26,7 +26,7 @@ namespace AutoInsight.Vehicles.Update
                     "```" +
                     "\n\n**Responses:**\n" +
                     "- `200 OK`: Vehicle successfully updated.\\n" +
-                    "- `400 Bad Request`: Invalid identifiers, request payload or forbidden state transition (including validation errors).\\n" +
+                    "- `400 Bad Request`: Invalid identifiers or request payload (including validation errors).\\n" +
                     "- `404 Not Found`: Yard, vehicle or assignee not found." +
                     "\n\n**Example Response (200):**\n" +
                     "```json\n" +
@@ -85,7 +85,7 @@ namespace AutoInsight.Vehicles.Update
             if (!Guid.TryParse(vehicleId, out var parsedVehicleId))
                 return Results.BadRequest(new { error = "'Vehicle Id' must be a valid UUID." });
 
-            var vehicle = await db.Vehicles.FirstOrDefaultAsync(v => v.Id == parsedVehicleId);
+            var vehicle = await db.Vehicles.FirstOrDefaultAsync(v => v.Id == parsedVehicleId && v.YardId == parsedYardId);
             if (vehicle is null)
                 return Results.NotFound(new { error = "Vehicle not found" });
 
@@ -101,7 +101,8 @@ namespace AutoInsight.Vehicles.Update
             if (request.AssigneeId is not null)
             {
                 var parsedAssigneeId = Guid.Parse(request.AssigneeId);
-                var assignee = await db.YardEmployees.FirstOrDefaultAsync(v => v.Id == parsedAssigneeId);
+                var assignee = await db.YardEmployees
+                    .FirstOrDefaultAsync(v => v.Id == parsedAssigneeId && v.YardId == parsedYardId);
 
                 if (assignee is null)
                     return Results.NotFound(new { error = "Assignee not found" });
