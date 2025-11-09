@@ -31,6 +31,8 @@ namespace AutoInsight.Models
         public required Guid YardId { get; init; }
         public required Yard Yard { get; set; }
 
+    public required Beacon Beacon { get; set; }
+
         public Guid? AssigneeId { get; set; }
         public YardEmployee? Assignee { get; set; }
     }

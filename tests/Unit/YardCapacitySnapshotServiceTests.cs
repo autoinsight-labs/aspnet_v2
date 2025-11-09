@@ -37,27 +37,51 @@ public sealed class YardCapacitySnapshotServiceTests
 
         for (var i = 0; i < activeVehicles; i++)
         {
-            context.Vehicles.Add(new Vehicle
+            var vehicle = new Vehicle
             {
                 Plate = $"AAA{i}123",
                 Model = VehicleModel.MottuSport110i,
                 Status = VehicleStatus.Waiting,
                 Yard = yard,
-                YardId = yard.Id
-            });
+                YardId = yard.Id,
+                Beacon = null!
+            };
+
+            vehicle.Beacon = new Beacon
+            {
+                UUID = $"active-uuid-{i}",
+                Major = $"active-major-{i}",
+                Minor = $"active-minor-{i}",
+                VehicleId = vehicle.Id,
+                Vehicle = vehicle
+            };
+
+            context.Vehicles.Add(vehicle);
         }
 
         for (var i = 0; i < inactiveVehicles; i++)
         {
-            context.Vehicles.Add(new Vehicle
+            var vehicle = new Vehicle
             {
                 Plate = $"BBB{i}456",
                 Model = VehicleModel.MottuSport110i,
                 Status = VehicleStatus.Finished,
                 LeftAt = DateTime.UtcNow,
                 Yard = yard,
-                YardId = yard.Id
-            });
+                YardId = yard.Id,
+                Beacon = null!
+            };
+
+            vehicle.Beacon = new Beacon
+            {
+                UUID = $"inactive-uuid-{i}",
+                Major = $"inactive-major-{i}",
+                Minor = $"inactive-minor-{i}",
+                VehicleId = vehicle.Id,
+                Vehicle = vehicle
+            };
+
+            context.Vehicles.Add(vehicle);
         }
 
         await context.SaveChangesAsync();

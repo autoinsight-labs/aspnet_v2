@@ -129,6 +129,45 @@ namespace aspnet.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "beacons",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    uuid = table.Column<string>(type: "text", nullable: false),
+                    major = table.Column<string>(type: "text", nullable: false),
+                    minor = table.Column<string>(type: "text", nullable: false),
+                    vehicle_id = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_beacons", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_beacons_vehicles_vehicle_id",
+                        column: x => x.vehicle_id,
+                        principalTable: "vehicles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_beacons_major_minor",
+                table: "beacons",
+                columns: new[] { "major", "minor" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_beacons_uuid",
+                table: "beacons",
+                column: "uuid",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_beacons_vehicle_id",
+                table: "beacons",
+                column: "vehicle_id",
+                unique: true);
+
             migrationBuilder.CreateIndex(
                 name: "ix_employee_invites_yard_id",
                 table: "employee_invites",
@@ -159,13 +198,16 @@ namespace aspnet.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "beacons");
+
+            migrationBuilder.DropTable(
                 name: "employee_invites");
 
             migrationBuilder.DropTable(
-                name: "vehicles");
+                name: "yard_capacity_snapshots");
 
             migrationBuilder.DropTable(
-                name: "yard_capacity_snapshots");
+                name: "vehicles");
 
             migrationBuilder.DropTable(
                 name: "yard_employees");

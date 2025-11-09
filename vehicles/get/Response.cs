@@ -7,7 +7,10 @@ public record Response(
     string Status,
     DateTime EnteredAt,
     DateTime? LeftAt,
-    AssigneeResponse? Assignee
+    AssigneeResponse? Assignee,
+    BeaconResponse Beacon
 );
 
 public record AssigneeResponse(Guid Id, string Name, string? ImageUrl, string Role, string UserId);
+
+public record BeaconResponse(Guid Id, string Uuid, string Major, string Minor);

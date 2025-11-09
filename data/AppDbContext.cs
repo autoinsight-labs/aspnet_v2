@@ -9,6 +9,7 @@ namespace AutoInsight.Data
 
         public DbSet<Yard> Yards => Set<Yard>();
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+        public DbSet<Beacon> Beacons => Set<Beacon>();
         public DbSet<YardEmployee> YardEmployees => Set<YardEmployee>();
         public DbSet<EmployeeInvite> EmployeeInvites => Set<EmployeeInvite>();
         public DbSet<YardCapacitySnapshot> YardCapacitySnapshots => Set<YardCapacitySnapshot>();
@@ -62,6 +63,23 @@ namespace AutoInsight.Data
                       .HasForeignKey(e => e.AssigneeId)
                       .OnDelete(DeleteBehavior.SetNull);
             });
+
+        modelBuilder.Entity<Beacon>(entity =>
+        {
+            entity.ToTable("beacons");
+                entity.Property(b => b.UUID).IsRequired();
+            entity.Property(b => b.Major).IsRequired();
+            entity.Property(b => b.Minor).IsRequired();
+
+                entity.HasIndex(b => b.UUID).IsUnique();
+            entity.HasIndex(b => new { b.Major, b.Minor }).IsUnique();
+
+            entity.HasOne(b => b.Vehicle)
+                .WithOne(v => v.Beacon)
+                .HasForeignKey<Beacon>(b => b.VehicleId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
             modelBuilder.Entity<YardEmployee>(entity =>
             {

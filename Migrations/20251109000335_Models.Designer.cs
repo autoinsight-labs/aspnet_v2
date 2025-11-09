@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace aspnet.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251108205146_Models")]
+    [Migration("20251109000335_Models")]
     partial class Models
     {
         /// <inheritdoc />
@@ -29,6 +29,50 @@ namespace aspnet.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "vehicle_model", new[] { "mottu_sport110i", "mottue", "honda_pop110i", "tvs_sport110i" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "vehicle_status", new[] { "scheduled", "waiting", "on_service", "finished", "cancelled" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("AutoInsight.Models.Beacon", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Major")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("major");
+
+                    b.Property<string>("Minor")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("minor");
+
+                    b.Property<string>("UUID")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("uuid");
+
+                    b.Property<Guid>("VehicleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("vehicle_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_beacons");
+
+                    b.HasIndex("UUID")
+                        .IsUnique()
+                        .HasDatabaseName("ix_beacons_uuid");
+
+                    b.HasIndex("VehicleId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_beacons_vehicle_id");
+
+                    b.HasIndex("Major", "Minor")
+                        .IsUnique()
+                        .HasDatabaseName("ix_beacons_major_minor");
+
+                    b.ToTable("beacons", (string)null);
+                });
 
             modelBuilder.Entity("AutoInsight.Models.EmployeeInvite", b =>
                 {
@@ -226,6 +270,18 @@ namespace aspnet.Migrations
                     b.ToTable("yard_employees", (string)null);
                 });
 
+            modelBuilder.Entity("AutoInsight.Models.Beacon", b =>
+                {
+                    b.HasOne("AutoInsight.Models.Vehicle", "Vehicle")
+                        .WithOne("Beacon")
+                        .HasForeignKey("AutoInsight.Models.Beacon", "VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_beacons_vehicles_vehicle_id");
+
+                    b.Navigation("Vehicle");
+                });
+
             modelBuilder.Entity("AutoInsight.Models.EmployeeInvite", b =>
                 {
                     b.HasOne("AutoInsight.Models.Yard", "Yard")
@@ -280,6 +336,12 @@ namespace aspnet.Migrations
                         .HasConstraintName("fk_yard_employees_yards_yard_id");
 
                     b.Navigation("Yard");
+                });
+
+            modelBuilder.Entity("AutoInsight.Models.Vehicle", b =>
+                {
+                    b.Navigation("Beacon")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("AutoInsight.Models.Yard", b =>

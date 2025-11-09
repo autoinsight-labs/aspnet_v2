@@ -8,5 +8,8 @@ public record Response(
     DateTime EnteredAt,
     DateTime? LeftAt,
     Guid YardId,
-    Guid? AssigneeId
+    Guid? AssigneeId,
+    BeaconResponse Beacon
 );
+
+public record BeaconResponse(Guid Id, string Uuid, string Major, string Minor);

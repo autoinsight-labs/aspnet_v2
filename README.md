@@ -69,10 +69,10 @@ Todas as rotas estão versionadas sob o prefixo `/v2`.
 
 | Método | Endpoint | Descrição | Parâmetros Notáveis | Autenticação |
 | ------ | -------- | --------- | ------------------- | ------------ |
-| POST   | `/v2/yards/{yardId}/vehicles` | Registra um veículo no pátio; aceita `assigneeId` opcional pertencente ao mesmo pátio. | Body: `plate`, `model`, `assigneeId`. | Não |
-| GET    | `/v2/yards/{yardId}/vehicles` | Lista veículos com paginação (`cursor`, `limit`) e filtro (`filter=active|departed|all`). | Query: `cursor`, `limit`, `filter`. | Não |
-| GET    | `/v2/yards/{yardId}/vehicles/{vehicleId}` | Retorna detalhes, incluindo status e responsável atual. | Path: `vehicleId`. | Não |
-| PATCH  | `/v2/yards/{yardId}/vehicles/{vehicleId}` | Atualiza status e/ou responsável, controlando transições e snapshots. | Body: `status`, `assigneeId`. | Não |
+| POST   | `/v2/yards/{yardId}/vehicles` | Registra um veículo no pátio e vincula um beacon exclusivo (UUID/Major/Minor); `assigneeId` opcional deve pertencer ao mesmo pátio. | Body: `plate`, `model`, `beacon.uuid`, `beacon.major`, `beacon.minor`, `assigneeId`. | Não |
+| GET    | `/v2/yards/{yardId}/vehicles` | Lista veículos com paginação (`cursor`, `limit`) e filtro (`filter=active|departed|all`), sempre retornando o beacon associado. | Query: `cursor`, `limit`, `filter`. | Não |
+| GET    | `/v2/yards/{yardId}/vehicles/{vehicleId}` | Retorna detalhes, incluindo status, responsável atual (quando houver) e beacon (UUID/Major/Minor). | Path: `vehicleId`. | Não |
+| PATCH  | `/v2/yards/{yardId}/vehicles/{vehicleId}` | Atualiza status, responsável e/ou beacon, controlando transições e snapshots. | Body: `status`, `assigneeId`, `beacon.uuid`, `beacon.major`, `beacon.minor`. | Não |
 
 ### 👥 Yard Employees
 

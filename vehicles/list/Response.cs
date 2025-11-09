@@ -14,5 +14,8 @@ public record ResponseItem(
     string Status,
     DateTime EnteredAt,
     DateTime? LeftAt,
-    Guid? AssigneeId
+    Guid? AssigneeId,
+    BeaconResponse Beacon
 );
+
+public record BeaconResponse(Guid Id, string Uuid, string Major, string Minor);
