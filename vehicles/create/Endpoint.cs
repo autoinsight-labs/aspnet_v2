@@ -177,7 +177,7 @@ public static class Endpoint
             vehicle.LeftAt,
             vehicle.YardId,
             vehicle.AssigneeId,
-            new BeaconResponse(vehicle.Beacon.Id, vehicle.Beacon.UUID, vehicle.Beacon.Major, vehicle.Beacon.Minor)
+            new BeaconResponse(vehicle.Beacon!.Id, vehicle.Beacon.UUID, vehicle.Beacon.Major, vehicle.Beacon.Minor)
         );
 
         return Results.Created($"/v2/yards/{yardId}/vehicles/{vehicle.Id}", response);

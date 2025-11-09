@@ -8,7 +8,7 @@ public record Response(
     DateTime EnteredAt,
     DateTime? LeftAt,
     AssigneeResponse? Assignee,
-    BeaconResponse Beacon
+    BeaconResponse? Beacon
 );
 
 public record AssigneeResponse(Guid Id, string Name, string? ImageUrl, string Role, string UserId);

@@ -78,11 +78,6 @@ public static class Endpoint
             return Results.NotFound(new { error = "Vehicle not found" });
         }
 
-        if (vehicle.Beacon is null)
-        {
-            return Results.NotFound(new { error = "Beacon not found for vehicle" });
-        }
-
         var response = new Response(
             vehicle.Id,
             vehicle.Plate,
@@ -98,7 +93,9 @@ public static class Endpoint
                     vehicle.Assignee.Role.ToString(),
                     vehicle.Assignee.UserId)
                 : null,
-            new BeaconResponse(vehicle.Beacon.Id, vehicle.Beacon.UUID, vehicle.Beacon.Major, vehicle.Beacon.Minor)
+            vehicle.Beacon is not null
+                ? new BeaconResponse(vehicle.Beacon.Id, vehicle.Beacon.UUID, vehicle.Beacon.Major, vehicle.Beacon.Minor)
+                : null
         );
 
         return Results.Ok(response);

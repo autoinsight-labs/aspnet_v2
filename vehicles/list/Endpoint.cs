@@ -91,7 +91,7 @@ public static class Endpoint
 
         var query = db.Vehicles
             .Include(v => v.Beacon)
-            .Where(v => v.YardId == parsedYardId && v.Beacon != null);
+            .Where(v => v.YardId == parsedYardId);
 
         var normalizedFilter = (filter ?? "active").Trim().ToLowerInvariant();
         if (!AllowedFilters.Contains(normalizedFilter))
@@ -133,7 +133,9 @@ public static class Endpoint
                 v.EnteredAt,
                 v.LeftAt,
                 v.AssigneeId,
-                new BeaconResponse(v.Beacon!.Id, v.Beacon.UUID, v.Beacon.Major, v.Beacon.Minor)
+                v.Beacon is not null
+                    ? new BeaconResponse(v.Beacon.Id, v.Beacon.UUID, v.Beacon.Major, v.Beacon.Minor)
+                    : null
             ))
             .ToList();
 

@@ -164,6 +164,7 @@ public static class Endpoint
         }
 
         var shouldCaptureSnapshot = false;
+        var vehicleDeparted = false;
         if (request.Status is not null)
         {
             var nextStatus = Enum.Parse<VehicleStatus>(request.Status, true);
@@ -177,11 +178,18 @@ public static class Endpoint
                 {
                     vehicle.LeftAt = DateTime.UtcNow;
                     shouldCaptureSnapshot = true;
+                    vehicleDeparted = true;
+
+                    if (vehicle.Beacon is not null)
+                    {
+                        db.Beacons.Remove(vehicle.Beacon);
+                        vehicle.Beacon = null;
+                    }
                 }
             }
         }
 
-        if (request.Beacon is not null)
+        if (request.Beacon is not null && !vehicleDeparted)
         {
             var normalizedUuid = request.Beacon.Uuid?.Trim();
             var normalizedMajor = request.Beacon.Major?.Trim();
@@ -280,7 +288,9 @@ public static class Endpoint
             vehicle.EnteredAt,
             vehicle.LeftAt,
             vehicle.AssigneeId,
-            new BeaconResponse(vehicle.Beacon!.Id, vehicle.Beacon.UUID, vehicle.Beacon.Major, vehicle.Beacon.Minor)
+            vehicle.Beacon is not null
+                ? new BeaconResponse(vehicle.Beacon.Id, vehicle.Beacon.UUID, vehicle.Beacon.Major, vehicle.Beacon.Minor)
+                : null
         );
 
         return Results.Ok(response);
