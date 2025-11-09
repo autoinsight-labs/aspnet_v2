@@ -32,6 +32,9 @@ builder.Services.AddDbContextFactory<AppDbContext>(lifetime: ServiceLifetime.Sco
 
 builder.Services.AddScoped<IYardCapacitySnapshotService, YardCapacitySnapshotService>();
 builder.Services.AddScoped<IYardCapacityForecastService, YardCapacityForecastService>();
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("database");
 
 var app = builder.Build();
 
@@ -51,6 +54,8 @@ app.MapGroup("/v2")
     .MapVehicleEnpoints()
     .MapYardEmployeeEnpoints()
     .MapEmployeeInviteEnpoints();
+
+app.MapHealthChecks("/health");
 
 app.Run();
 
